@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:task_management/home_screen.dart';
+import 'package:provider/provider.dart';
+import 'home_screen.dart';
+import 'providers/task_provider.dart';
+import 'services/api_service.dart';
+import 'services/connectivity_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -8,16 +12,39 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+    return MultiProvider(
+      providers: [
+        Provider<ApiService>(
+          create: (_) => ApiService(),
+        ),
+        Provider<ConnectivityService>(
+          create: (_) => ConnectivityService(),
+        ),
+        ChangeNotifierProxyProvider2<ApiService, ConnectivityService,
+            TaskProvider>(
+          create: (context) => TaskProvider(
+            apiService: context.read<ApiService>(),
+            connectivityService: context.read<ConnectivityService>(),
+          ),
+          update: (context, apiService, connectivityService, previous) =>
+              previous ??
+              TaskProvider(
+                apiService: apiService,
+                connectivityService: connectivityService,
+              ),
+        ),
+      ],
+      child: MaterialApp(
+        title: 'Task Management',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          useMaterial3: true,
+        ),
+        home: const HomeScreen(),
+        debugShowCheckedModeBanner: false,
       ),
-      home: const HomeScreen(title: 'Task Management'),
     );
   }
 }
-
