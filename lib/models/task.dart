@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 class Task {
   final String id;
   final String title;
@@ -51,20 +52,45 @@ class Task {
   }
 
   factory Task.fromJson(Map<String, dynamic> json) {
-    return Task(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      description: json['description'] as String,
-      dueDate: json['dueDate'] != null
-          ? DateTime.parse(json['dueDate'] as String)
-          : null,
-      assignedTo: json['assignedTo'] as String,
-      status: TaskStatus.fromString(json['status'] as String),
-      category: TaskCategory.fromString(json['category'] as String),
-      priority: TaskPriority.fromString(json['priority'] as String),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
-    );
+    try {
+      return Task(
+        id: json['id']?.toString() ?? '',
+        title: json['title']?.toString() ?? '',
+        description: json['description']?.toString() ?? '',
+        dueDate: json['dueDate'] != null || json['due_date'] != null
+            ? DateTime.tryParse(
+                (json['dueDate'] ?? json['due_date']).toString(),
+              )
+            : null,
+        assignedTo: (json['assignedTo'] ?? json['assigned_to'] ?? '')
+            .toString(),
+        status: TaskStatus.fromString(
+          json['status']?.toString() ??
+              json['task_status']?.toString() ??
+              'Pending',
+        ),
+        category: TaskCategory.fromString(
+          json['category']?.toString() ?? 'Other',
+        ),
+        priority: TaskPriority.fromString(
+          json['priority']?.toString() ?? 'Medium',
+        ),
+        createdAt:
+            DateTime.tryParse(
+              (json['createdAt'] ?? json['created_at'] ?? '').toString(),
+            ) ??
+            DateTime.now(),
+        updatedAt:
+            DateTime.tryParse(
+              (json['updatedAt'] ?? json['updated_at'] ?? '').toString(),
+            ) ??
+            DateTime.now(),
+      );
+    } catch (e) {
+      print('❌ Error parsing Task from JSON: $e');
+      print('📦 JSON data: $json');
+      rethrow;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -72,13 +98,19 @@ class Task {
       'id': id,
       'title': title,
       'description': description,
+      // Send both camelCase and snake_case to align with backend expectations
       'dueDate': dueDate?.toIso8601String(),
+      'due_date': dueDate?.toIso8601String(),
       'assignedTo': assignedTo,
+      'assigned_to': assignedTo,
       'status': status.value,
+      'task_status': status.value,
       'category': category.value,
       'priority': priority.value,
       'createdAt': createdAt.toIso8601String(),
+      'created_at': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
     };
   }
 }

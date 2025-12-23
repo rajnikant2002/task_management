@@ -17,13 +17,17 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         Provider<ApiService>(
+          // For physical devices, use your computer's IP address instead:
+          // create: (_) => ApiService(baseUrl: 'http://192.168.0.171:3000/api'),
+          // For emulator/simulator, use default (auto-detects platform):
           create: (_) => ApiService(),
         ),
-        Provider<ConnectivityService>(
-          create: (_) => ConnectivityService(),
-        ),
-        ChangeNotifierProxyProvider2<ApiService, ConnectivityService,
-            TaskProvider>(
+        Provider<ConnectivityService>(create: (_) => ConnectivityService()),
+        ChangeNotifierProxyProvider2<
+          ApiService,
+          ConnectivityService,
+          TaskProvider
+        >(
           create: (context) => TaskProvider(
             apiService: context.read<ApiService>(),
             connectivityService: context.read<ConnectivityService>(),

@@ -114,6 +114,21 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       return;
     }
 
+    // Ensure auto-classification runs at least once before saving
+    if (_selectedCategory == null || _selectedPriority == null) {
+      await _classifyTask();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Auto-classified. Review/adjust category & priority, then submit again.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     if (_selectedCategory == null || _selectedPriority == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select category and priority')),
