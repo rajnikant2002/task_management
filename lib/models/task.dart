@@ -173,10 +173,25 @@ enum TaskPriority {
   const TaskPriority(this.value);
 
   static TaskPriority fromString(String value) {
-    return TaskPriority.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => TaskPriority.medium,
-    );
+    final normalized = value.trim().toLowerCase();
+
+    // First try to match display values like "Low", "Medium", "High" ignoring case
+    for (final p in TaskPriority.values) {
+      if (p.value.toLowerCase() == normalized) {
+        return p;
+      }
+    }
+
+    // Fallback for common raw backend values like "low", "medium", "high"
+    switch (normalized) {
+      case 'low':
+        return TaskPriority.low;
+      case 'high':
+        return TaskPriority.high;
+      case 'medium':
+      default:
+        return TaskPriority.medium;
+    }
   }
 
   static Color getColor(TaskPriority priority) {

@@ -135,10 +135,7 @@ class _PriorityBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: TaskPriority.getColor(priority).withOpacity(0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: TaskPriority.getColor(priority),
-          width: 1,
-        ),
+        border: Border.all(color: TaskPriority.getColor(priority), width: 1),
       ),
       child: Text(
         priority.value,
