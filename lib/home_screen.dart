@@ -315,7 +315,18 @@ class _HomeScreenState extends State<HomeScreen> {
                             final task = taskProvider.tasks[index];
                             return TaskListItem(
                               task: task,
-                              onTap: () => _showTaskDetails(task, taskProvider),
+                              onTap: () async {
+                                // When user taps a task, move it to In Progress (if pending)
+                                if (task.status == TaskStatus.pending) {
+                                  final updatedTask = task.copyWith(
+                                    status: TaskStatus.inProgress,
+                                  );
+                                  await taskProvider.updateTask(updatedTask);
+                                  _showTaskDetails(updatedTask, taskProvider);
+                                } else {
+                                  _showTaskDetails(task, taskProvider);
+                                }
+                              },
                               onEdit: () => _showTaskForm(task: task),
                               onDelete: () async {
                                 final confirm = await showDialog<bool>(
