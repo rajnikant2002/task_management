@@ -6,12 +6,14 @@ class TaskListItem extends StatelessWidget {
   final Task task;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onEdit;
 
   const TaskListItem({
     super.key,
     required this.task,
     required this.onTap,
     this.onDelete,
+    this.onEdit,
   });
 
   @override
@@ -69,13 +71,23 @@ class TaskListItem extends StatelessWidget {
             ),
           ],
         ),
-        trailing: onDelete != null
-            ? IconButton(
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (onEdit != null)
+              IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: onEdit,
+                color: Colors.blueGrey,
+              ),
+            if (onDelete != null)
+              IconButton(
                 icon: const Icon(Icons.delete_outline),
                 onPressed: onDelete,
                 color: Colors.red,
-              )
-            : null,
+              ),
+          ],
+        ),
       ),
     );
   }
