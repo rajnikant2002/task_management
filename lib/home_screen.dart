@@ -33,10 +33,7 @@ class _HomeScreenState extends State<HomeScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => TaskFormBottomSheet(
-        task: task,
-        taskProvider: context.read<TaskProvider>(),
-      ),
+      builder: (context) => TaskFormBottomSheet(task: task),
     );
   }
 
@@ -48,161 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Consumer<TaskProvider>(
-          builder: (context, provider, _) {
-            // Get the latest task from the provider to ensure we have the most up-to-date data
-            // Use getTaskById to get from the full list, not just filtered tasks
-            final currentTask = provider.getTaskById(task.id) ?? task;
-
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 24,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            currentTask.title,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(context).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      currentTask.description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        Chip(
-                          avatar: const Icon(Icons.category, size: 16),
-                          label: Text(currentTask.category.value),
-                        ),
-                        Chip(
-                          avatar: const Icon(Icons.flag, size: 16),
-                          label: Text(
-                            'Priority: ${currentTask.priority.value}',
-                          ),
-                        ),
-                        Chip(
-                          avatar: const Icon(Icons.person, size: 16),
-                          label: Text(
-                            currentTask.assignedTo.isEmpty
-                                ? 'Unassigned'
-                                : currentTask.assignedTo,
-                          ),
-                        ),
-                        Chip(
-                          avatar: const Icon(Icons.info_outline, size: 16),
-                          label: Text('Status: ${currentTask.status.value}'),
-                        ),
-                        if (currentTask.dueDate != null)
-                          Chip(
-                            avatar: const Icon(Icons.calendar_today, size: 16),
-                            label: Text(
-                              'Due: ${DateFormat('MMM dd, yyyy').format(currentTask.dueDate!)}',
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                              _showTaskForm(task: currentTask);
-                            },
-                            icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Edit Task'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () async {
-                              final confirm = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Delete Task'),
-                                  content: const Text(
-                                    'Are you sure you want to delete this task?',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, false),
-                                      child: const Text('Cancel'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () =>
-                                          Navigator.pop(context, true),
-                                      child: const Text('Delete'),
-                                    ),
-                                  ],
-                                ),
-                              );
-
-                              if (confirm == true) {
-                                await provider.deleteTask(currentTask.id);
-                                if (context.mounted) {
-                                  Navigator.of(context).pop();
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Task deleted'),
-                                    ),
-                                  );
-                                }
-                              }
-                            },
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Delete'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (currentTask.status != TaskStatus.completed)
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          final updatedTask = currentTask.copyWith(
-                            status: TaskStatus.completed,
-                          );
-                          await provider.updateTask(updatedTask);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Task marked as completed'),
-                              ),
-                            );
-                            // Don't close the modal, let it update to show the new status
-                          }
-                        },
-                        icon: const Icon(Icons.check_circle_outline),
-                        label: const Text('Mark as Completed'),
-                      ),
-                  ],
-                ),
-              ),
-            );
+        return _TaskDetailsModal(
+          task: task,
+          onEdit: (task) {
+            Navigator.of(context).pop();
+            _showTaskForm(task: task);
           },
         );
       },
@@ -262,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context, taskProvider, _) {
           return Column(
             children: [
-              OfflineIndicator(taskProvider: taskProvider),
+              const OfflineIndicator(),
               const SummaryCards(),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -290,7 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              FilterChips(taskProvider: taskProvider),
+              const FilterChips(),
               const SizedBox(height: 8),
               Expanded(
                 child: taskProvider.isLoading && taskProvider.tasks.isEmpty
@@ -328,17 +175,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             final task = taskProvider.tasks[index];
                             return TaskListItem(
                               task: task,
-                              onTap: () async {
-                                // When user taps a task, move it to In Progress (if pending)
-                                if (task.status == TaskStatus.pending) {
-                                  final updatedTask = task.copyWith(
-                                    status: TaskStatus.inProgress,
-                                  );
-                                  await taskProvider.updateTask(updatedTask);
-                                  _showTaskDetails(updatedTask, taskProvider);
-                                } else {
-                                  _showTaskDetails(task, taskProvider);
-                                }
+                              onTap: () {
+                                // The modal will automatically update pending tasks to in progress
+                                _showTaskDetails(task, taskProvider);
                               },
                               onEdit: () => _showTaskForm(task: task),
                               onDelete: () async {
@@ -388,6 +227,202 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: const Icon(Icons.add),
         label: const Text('New Task'),
       ),
+    );
+  }
+}
+
+class _TaskDetailsModal extends StatefulWidget {
+  final Task task;
+  final Function(Task) onEdit;
+
+  const _TaskDetailsModal({required this.task, required this.onEdit});
+
+  @override
+  State<_TaskDetailsModal> createState() => _TaskDetailsModalState();
+}
+
+class _TaskDetailsModalState extends State<_TaskDetailsModal> {
+  bool _hasUpdatedStatus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Automatically update pending tasks to in progress when modal opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updatePendingToInProgress();
+    });
+  }
+
+  Future<void> _updatePendingToInProgress() async {
+    if (_hasUpdatedStatus) return;
+
+    final provider = context.read<TaskProvider>();
+    final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
+
+    // If task is pending, automatically update to in progress
+    if (currentTask.status == TaskStatus.pending) {
+      _hasUpdatedStatus = true;
+      final updatedTask = currentTask.copyWith(status: TaskStatus.inProgress);
+      await provider.updateTask(updatedTask);
+      // Force a rebuild after update completes
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<TaskProvider>(
+      builder: (context, provider, _) {
+        // Get the latest task from the provider to ensure we have the most up-to-date data
+        // Use getTaskById to get from the full list, not just filtered tasks
+        final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
+
+        return Padding(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        currentTask.title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  currentTask.description,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Chip(
+                      avatar: const Icon(Icons.category, size: 16),
+                      label: Text(currentTask.category.value),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.flag, size: 16),
+                      label: Text('Priority: ${currentTask.priority.value}'),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.person, size: 16),
+                      label: Text(
+                        currentTask.assignedTo.isEmpty
+                            ? 'Unassigned'
+                            : currentTask.assignedTo,
+                      ),
+                    ),
+                    Chip(
+                      avatar: const Icon(Icons.info_outline, size: 16),
+                      label: Text('Status: ${currentTask.status.value}'),
+                    ),
+                    if (currentTask.dueDate != null)
+                      Chip(
+                        avatar: const Icon(Icons.calendar_today, size: 16),
+                        label: Text(
+                          'Due: ${DateFormat('MMM dd, yyyy').format(currentTask.dueDate!)}',
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          widget.onEdit(currentTask);
+                        },
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Edit Task'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Delete Task'),
+                              content: const Text(
+                                'Are you sure you want to delete this task?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text('Delete'),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirm == true) {
+                            await provider.deleteTask(currentTask.id);
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Task deleted')),
+                              );
+                            }
+                          }
+                        },
+                        icon: const Icon(Icons.delete_outline),
+                        label: const Text('Delete'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (currentTask.status != TaskStatus.completed)
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final updatedTask = currentTask.copyWith(
+                        status: TaskStatus.completed,
+                      );
+                      await provider.updateTask(updatedTask);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Task marked as completed'),
+                          ),
+                        );
+                        // Don't close the modal, let it update to show the new status
+                      }
+                    },
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Mark as Completed'),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
 
 class TaskFormBottomSheet extends StatefulWidget {
   final Task? task;
-  final TaskProvider taskProvider;
 
-  const TaskFormBottomSheet({super.key, this.task, required this.taskProvider});
+  const TaskFormBottomSheet({super.key, this.task});
 
   @override
   State<TaskFormBottomSheet> createState() => _TaskFormBottomSheetState();
@@ -79,16 +79,17 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       updatedAt: DateTime.now(),
     );
 
+    final taskProvider = context.read<TaskProvider>();
     try {
       if (widget.task == null) {
-        await widget.taskProvider.createTask(task);
+        await taskProvider.createTask(task);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Task created successfully')),
           );
         }
       } else {
-        await widget.taskProvider.updateTask(task);
+        await taskProvider.updateTask(task);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Task updated successfully')),

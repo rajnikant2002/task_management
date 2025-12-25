@@ -139,7 +139,9 @@ enum TaskStatus {
     }
     // Handle common variations
     final lowerValue = normalized.toLowerCase();
-    if (lowerValue == 'in progress' || lowerValue == 'inprogress') {
+    if (lowerValue == 'in progress' || 
+        lowerValue == 'inprogress' || 
+        lowerValue == 'in_progress') {
       return TaskStatus.inProgress;
     }
     if (lowerValue == 'completed' || lowerValue == 'complete') {
