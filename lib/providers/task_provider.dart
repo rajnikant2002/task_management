@@ -37,6 +37,15 @@ class TaskProvider with ChangeNotifier {
   TaskPriority? get selectedPriority => _selectedPriority;
   TaskStatus? get selectedStatus => _selectedStatus;
 
+  // Get a task by ID from the full task list (not filtered)
+  Task? getTaskById(String id) {
+    try {
+      return _tasks.firstWhere((t) => t.id == id);
+    } catch (e) {
+      return null;
+    }
+  }
+
   int get pendingCount =>
       _tasks.where((t) => t.status == TaskStatus.pending).length;
   int get inProgressCount =>
@@ -120,7 +129,6 @@ class TaskProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
 
   void setSearchQuery(String query) {
     _searchQuery = query;

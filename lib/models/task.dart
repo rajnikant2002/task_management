@@ -124,10 +124,31 @@ enum TaskStatus {
   const TaskStatus(this.value);
 
   static TaskStatus fromString(String value) {
-    return TaskStatus.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => TaskStatus.pending,
-    );
+    final normalized = value.trim();
+    // Try case-sensitive match first
+    for (final status in TaskStatus.values) {
+      if (status.value == normalized) {
+        return status;
+      }
+    }
+    // Try case-insensitive match
+    for (final status in TaskStatus.values) {
+      if (status.value.toLowerCase() == normalized.toLowerCase()) {
+        return status;
+      }
+    }
+    // Handle common variations
+    final lowerValue = normalized.toLowerCase();
+    if (lowerValue == 'in progress' || lowerValue == 'inprogress') {
+      return TaskStatus.inProgress;
+    }
+    if (lowerValue == 'completed' || lowerValue == 'complete') {
+      return TaskStatus.completed;
+    }
+    if (lowerValue == 'pending') {
+      return TaskStatus.pending;
+    }
+    return TaskStatus.pending;
   }
 }
 

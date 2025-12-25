@@ -1,45 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 
 class SummaryCards extends StatelessWidget {
-  final TaskProvider taskProvider;
-
-  const SummaryCards({super.key, required this.taskProvider});
+  const SummaryCards({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SummaryCard(
-              title: 'Pending',
-              count: taskProvider.pendingCount,
-              color: Colors.orange,
-              icon: Icons.pending_outlined,
-            ),
+    return Consumer<TaskProvider>(
+      builder: (context, taskProvider, _) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: _SummaryCard(
+                  title: 'Pending',
+                  count: taskProvider.pendingCount,
+                  color: Colors.orange,
+                  icon: Icons.pending_outlined,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SummaryCard(
+                  title: 'In Progress',
+                  count: taskProvider.inProgressCount,
+                  color: Colors.blue,
+                  icon: Icons.work_outline,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _SummaryCard(
+                  title: 'Completed',
+                  count: taskProvider.completedCount,
+                  color: Colors.green,
+                  icon: Icons.check_circle_outline,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _SummaryCard(
-              title: 'In Progress',
-              count: taskProvider.inProgressCount,
-              color: Colors.blue,
-              icon: Icons.work_outline,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _SummaryCard(
-              title: 'Completed',
-              count: taskProvider.completedCount,
-              color: Colors.green,
-              icon: Icons.check_circle_outline,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
