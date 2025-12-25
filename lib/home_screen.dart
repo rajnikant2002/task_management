@@ -48,149 +48,236 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        task.title,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 24,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  task.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Chip(
-                      avatar: const Icon(Icons.category, size: 16),
-                      label: Text(task.category.value),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.flag, size: 16),
-                      label: Text('Priority: ${task.priority.value}'),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.person, size: 16),
-                      label: Text(
-                        task.assignedTo.isEmpty
-                            ? 'Unassigned'
-                            : task.assignedTo,
-                      ),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.info_outline, size: 16),
-                      label: Text('Status: ${task.status.value}'),
-                    ),
-                    if (task.dueDate != null)
-                      Chip(
-                        avatar: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(
-                          'Due: ${DateFormat('MMM dd, yyyy').format(task.dueDate!)}',
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            task.title,
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.grey.shade100,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                          _showTaskForm(task: task);
-                        },
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Edit Task'),
+                      child: Text(
+                        task.description,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyMedium?.copyWith(height: 1.5),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Delete Task'),
-                              content: const Text(
-                                'Are you sure you want to delete this task?',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete'),
-                                ),
-                              ],
+                    const SizedBox(height: 20),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: [
+                        Chip(
+                          avatar: Icon(
+                            Icons.category,
+                            size: 16,
+                            color: TaskCategory.getColor(task.category),
+                          ),
+                          label: Text(task.category.value),
+                          backgroundColor: TaskCategory.getColor(
+                            task.category,
+                          ).withOpacity(0.1),
+                        ),
+                        Chip(
+                          avatar: Icon(
+                            Icons.flag,
+                            size: 16,
+                            color: TaskPriority.getColor(task.priority),
+                          ),
+                          label: Text(task.priority.value),
+                          backgroundColor: TaskPriority.getColor(
+                            task.priority,
+                          ).withOpacity(0.1),
+                        ),
+                        Chip(
+                          avatar: const Icon(Icons.person, size: 16),
+                          label: Text(
+                            task.assignedTo.isEmpty
+                                ? 'Unassigned'
+                                : task.assignedTo,
+                          ),
+                          backgroundColor: Colors.purple.withOpacity(0.1),
+                        ),
+                        Chip(
+                          avatar: Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: task.status == TaskStatus.pending
+                                ? Colors.orange
+                                : task.status == TaskStatus.inProgress
+                                ? Colors.blue
+                                : Colors.green,
+                          ),
+                          label: Text(task.status.value),
+                          backgroundColor:
+                              (task.status == TaskStatus.pending
+                                      ? Colors.orange
+                                      : task.status == TaskStatus.inProgress
+                                      ? Colors.blue
+                                      : Colors.green)
+                                  .withOpacity(0.1),
+                        ),
+                        if (task.dueDate != null)
+                          Chip(
+                            avatar: const Icon(Icons.calendar_today, size: 16),
+                            label: Text(
+                              DateFormat('MMM dd, yyyy').format(task.dueDate!),
                             ),
-                          );
+                            backgroundColor: Colors.blue.withOpacity(0.1),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              _showTaskForm(task: task);
+                            },
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Edit Task'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () async {
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete Task'),
+                                  content: const Text(
+                                    'Are you sure you want to delete this task?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('Delete'),
+                                    ),
+                                  ],
+                                ),
+                              );
 
-                          if (confirm == true) {
-                            await taskProvider.deleteTask(task.id);
+                              if (confirm == true) {
+                                await taskProvider.deleteTask(task.id);
+                                if (mounted) {
+                                  Navigator.of(context).pop();
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Task deleted'),
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.delete_outline),
+                            label: const Text('Delete'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              foregroundColor: Colors.red,
+                              side: const BorderSide(color: Colors.red),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (task.status != TaskStatus.completed) ...[
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final updatedTask = task.copyWith(
+                              status: TaskStatus.completed,
+                            );
+                            await taskProvider.updateTask(updatedTask);
                             if (mounted) {
                               Navigator.of(context).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Task deleted')),
+                                const SnackBar(
+                                  content: Text('Task marked as completed'),
+                                ),
                               );
                             }
-                          }
-                        },
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Delete'),
+                          },
+                          icon: const Icon(Icons.check_circle_outline),
+                          label: const Text('Mark as Completed'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade600,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 12),
-                if (task.status != TaskStatus.completed)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final updatedTask = task.copyWith(
-                        status: TaskStatus.completed,
-                      );
-                      await taskProvider.updateTask(updatedTask);
-                      if (mounted) {
-                        Navigator.of(context).pop();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Task marked as completed'),
-                          ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Mark as Completed'),
-                  ),
-              ],
+              ),
             ),
-          ),
+          ],
         );
       },
     );
