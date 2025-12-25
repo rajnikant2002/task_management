@@ -212,7 +212,26 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton(onPressed: _submit, child: const Text('Submit')),
+                ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: widget.task == null
+                        ? Colors.green.shade600
+                        : Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    widget.task == null ? 'Create Task' : 'Update Task',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
