@@ -127,19 +127,5 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> classifyTask(
-    String title,
-    String description,
-  ) async {
-    try {
-      final response = await _dio.post(
-        '/tasks/classify',
-        data: {'title': title, 'description': description},
-      );
-      return response.data['data'] ?? response.data;
-    } catch (e) {
-      // Return default values if classification fails
-      return {'category': 'other', 'priority': 'medium'};
-    }
-  }
+  
 }

@@ -19,14 +19,9 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
   final _descriptionController = TextEditingController();
   final _assignedToController = TextEditingController();
 
-  // Listeners for reactive updates
-  bool _canClassify = false;
-
   DateTime? _selectedDueDate;
   TaskCategory? _selectedCategory;
   TaskPriority? _selectedPriority;
-  bool _isClassifying = false;
-  bool _showClassification = false;
 
   @override
   void initState() {
@@ -39,60 +34,14 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       _selectedCategory = widget.task!.category;
       _selectedPriority = widget.task!.priority;
     }
-
-    // Add listeners for reactive button visibility
-    _titleController.addListener(_updateCanClassify);
-    _descriptionController.addListener(_updateCanClassify);
-    _updateCanClassify();
-  }
-
-  void _updateCanClassify() {
-    final canClassify =
-        _titleController.text.isNotEmpty &&
-        _descriptionController.text.isNotEmpty;
-    if (_canClassify != canClassify) {
-      setState(() {
-        _canClassify = canClassify;
-      });
-    }
   }
 
   @override
   void dispose() {
-    _titleController.removeListener(_updateCanClassify);
-    _descriptionController.removeListener(_updateCanClassify);
     _titleController.dispose();
     _descriptionController.dispose();
     _assignedToController.dispose();
     super.dispose();
-  }
-
-  Future<void> _classifyTask() async {
-    if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-      return;
-    }
-
-    setState(() {
-      _isClassifying = true;
-    });
-
-    try {
-      final classification = await widget.taskProvider.classifyTask(
-        _titleController.text,
-        _descriptionController.text,
-      );
-
-      setState(() {
-        _selectedCategory = TaskCategory.fromString(classification['category']);
-        _selectedPriority = TaskPriority.fromString(classification['priority']);
-        _showClassification = true;
-        _isClassifying = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isClassifying = false;
-      });
-    }
   }
 
   Future<void> _selectDate() async {
@@ -110,25 +59,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    // Ensure auto-classification runs at least once before saving
-    if (_selectedCategory == null || _selectedPriority == null) {
-      await _classifyTask();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Auto-classified. Review/adjust category & priority, then submit again.',
-            ),
-          ),
-        );
-      }
-      return;
-    }
-
     if (_selectedCategory == null || _selectedPriority == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select category and priority')),
@@ -209,13 +139,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                     }
                     return null;
                   },
-                  onChanged: (_) {
-                    if (_showClassification) {
-                      setState(() {
-                        _showClassification = false;
-                      });
-                    }
-                  },
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
@@ -230,13 +153,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                       return 'Please enter a description';
                     }
                     return null;
-                  },
-                  onChanged: (_) {
-                    if (_showClassification) {
-                      setState(() {
-                        _showClassification = false;
-                      });
-                    }
                   },
                 ),
                 const SizedBox(height: 16),
@@ -257,44 +173,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                     border: OutlineInputBorder(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                if (_canClassify)
-                  OutlinedButton(
-                    onPressed: _isClassifying ? null : _classifyTask,
-                    child: _isClassifying
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Auto-Classify'),
-                  ),
-                if (_showClassification) ...[
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.blue.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Auto-generated Classification:',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade900,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Category: ${_selectedCategory?.value ?? 'N/A'}'),
-                        Text('Priority: ${_selectedPriority?.value ?? 'N/A'}'),
-                      ],
-                    ),
-                  ),
-                ],
                 const SizedBox(height: 16),
                 DropdownButtonFormField<TaskCategory>(
                   value: _selectedCategory,

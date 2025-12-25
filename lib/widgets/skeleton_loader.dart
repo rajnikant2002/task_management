@@ -53,3 +53,4 @@ class SkeletonLoader extends StatelessWidget {
     );
   }
 }
+

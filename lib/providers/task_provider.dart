@@ -121,16 +121,6 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> classifyTask(
-    String title,
-    String description,
-  ) async {
-    try {
-      return await _apiService.classifyTask(title, description);
-    } catch (e) {
-      return {'category': 'other', 'priority': 'medium'};
-    }
-  }
 
   void setSearchQuery(String query) {
     _searchQuery = query;
