@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
+import '../services/api_service.dart';
+import 'classification_preview_dialog.dart';
 
 class TaskFormBottomSheet extends StatefulWidget {
   final Task? task;
@@ -59,6 +61,71 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
   }
 
   Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // For new tasks, show auto-classification preview
+    if (widget.task == null) {
+      await _showClassificationPreview();
+    } else {
+      // For editing, submit directly
+      await _createOrUpdateTask();
+    }
+  }
+
+  Future<void> _showClassificationPreview() async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final apiService = context.read<ApiService>();
+      final classification = await apiService.getAutoClassification(
+        title: _titleController.text,
+        description: _descriptionController.text,
+      );
+
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      // Show preview dialog
+      if (!context.mounted) return;
+      await showDialog(
+        context: context,
+        builder: (context) => ClassificationPreviewDialog(
+          classification: classification,
+          initialCategory: _selectedCategory,
+          initialPriority: _selectedPriority,
+          onConfirm: (category, priority) {
+            setState(() {
+              _selectedCategory = category;
+              _selectedPriority = priority;
+            });
+            // Now create the task
+            _createOrUpdateTask();
+          },
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // Close loading
+
+      // If classification fails, proceed with manual selection
+      if (_selectedCategory == null || _selectedPriority == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select category and priority')),
+        );
+        return;
+      }
+      await _createOrUpdateTask();
+    }
+  }
+
+  Future<void> _createOrUpdateTask() async {
     if (_selectedCategory == null || _selectedPriority == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select category and priority')),

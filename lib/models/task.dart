@@ -11,6 +11,8 @@ class Task {
   final TaskPriority priority;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final Map<String, dynamic>? extractedEntities;
+  final List<String>? suggestedActions;
 
   Task({
     required this.id,
@@ -23,6 +25,8 @@ class Task {
     required this.priority,
     required this.createdAt,
     required this.updatedAt,
+    this.extractedEntities,
+    this.suggestedActions,
   });
 
   Task copyWith({
@@ -36,6 +40,8 @@ class Task {
     TaskPriority? priority,
     DateTime? createdAt,
     DateTime? updatedAt,
+    Map<String, dynamic>? extractedEntities,
+    List<String>? suggestedActions,
   }) {
     return Task(
       id: id ?? this.id,
@@ -48,6 +54,8 @@ class Task {
       priority: priority ?? this.priority,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      extractedEntities: extractedEntities ?? this.extractedEntities,
+      suggestedActions: suggestedActions ?? this.suggestedActions,
     );
   }
 
@@ -85,6 +93,17 @@ class Task {
               (json['updatedAt'] ?? json['updated_at'] ?? '').toString(),
             ) ??
             DateTime.now(),
+        extractedEntities: json['extractedEntities'] != null ||
+                json['extracted_entities'] != null
+            ? (json['extractedEntities'] ?? json['extracted_entities'])
+                as Map<String, dynamic>?
+            : null,
+        suggestedActions: json['suggestedActions'] != null ||
+                json['suggested_actions'] != null
+            ? List<String>.from(
+                json['suggestedActions'] ?? json['suggested_actions'] ?? [],
+              )
+            : null,
       );
     } catch (e) {
       print('❌ Error parsing Task from JSON: $e');
@@ -111,7 +130,48 @@ class Task {
       'created_at': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      if (extractedEntities != null) 'extractedEntities': extractedEntities,
+      if (extractedEntities != null) 'extracted_entities': extractedEntities,
+      if (suggestedActions != null) 'suggestedActions': suggestedActions,
+      if (suggestedActions != null) 'suggested_actions': suggestedActions,
     };
+  }
+}
+
+// Model for auto-classification preview
+class TaskClassification {
+  final TaskCategory category;
+  final TaskPriority priority;
+  final Map<String, dynamic>? extractedEntities;
+  final List<String>? suggestedActions;
+
+  TaskClassification({
+    required this.category,
+    required this.priority,
+    this.extractedEntities,
+    this.suggestedActions,
+  });
+
+  factory TaskClassification.fromJson(Map<String, dynamic> json) {
+    return TaskClassification(
+      category: TaskCategory.fromString(
+        json['category']?.toString() ?? 'Other',
+      ),
+      priority: TaskPriority.fromString(
+        json['priority']?.toString() ?? 'Medium',
+      ),
+      extractedEntities: json['extractedEntities'] != null ||
+              json['extracted_entities'] != null
+          ? (json['extractedEntities'] ?? json['extracted_entities'])
+              as Map<String, dynamic>?
+          : null,
+      suggestedActions: json['suggestedActions'] != null ||
+              json['suggested_actions'] != null
+          ? List<String>.from(
+              json['suggestedActions'] ?? json['suggested_actions'] ?? [],
+            )
+          : null,
+    );
   }
 }
 

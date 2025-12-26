@@ -127,5 +127,30 @@ class ApiService {
     }
   }
 
-  
+  // Get auto-classification for a task before creating it
+  Future<TaskClassification> getAutoClassification({
+    required String title,
+    required String description,
+  }) async {
+    try {
+      // Call backend to get auto-classification
+      // This endpoint should analyze the title/description and return classification
+      final response = await _dio.post(
+        '/tasks/classify',
+        data: {'title': title, 'description': description},
+      );
+
+      // Handle response structure
+      final data = response.data['data'] ?? response.data;
+      return TaskClassification.fromJson(data as Map<String, dynamic>);
+    } catch (e) {
+      // If classification endpoint doesn't exist, return defaults
+      // In a real scenario, you might want to handle this differently
+      print('⚠️ Classification endpoint not available, using defaults: $e');
+      return TaskClassification(
+        category: TaskCategory.other,
+        priority: TaskPriority.medium,
+      );
+    }
+  }
 }

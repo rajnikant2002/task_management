@@ -345,6 +345,61 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                       ),
                   ],
                 ),
+                if (currentTask.extractedEntities != null &&
+                    currentTask.extractedEntities!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const Text(
+                    'Extracted Entities:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: currentTask.extractedEntities!.entries.map((
+                      entry,
+                    ) {
+                      return Chip(
+                        avatar: const Icon(Icons.label_outline, size: 16),
+                        label: Text('${entry.key}: ${entry.value}'),
+                        backgroundColor: Colors.blue.shade50,
+                      );
+                    }).toList(),
+                  ),
+                ],
+                if (currentTask.suggestedActions != null &&
+                    currentTask.suggestedActions!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const Text(
+                    'Suggested Actions:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...currentTask.suggestedActions!.map(
+                    (action) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 20,
+                            color: Colors.green,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              action,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   children: [

@@ -9,38 +9,38 @@ class SummaryCards extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, taskProvider, _) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: _SummaryCard(
-                  title: 'Pending',
-                  count: taskProvider.pendingCount,
-                  color: Colors.orange,
-                  icon: Icons.pending_outlined,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SummaryCard(
-                  title: 'In Progress',
-                  count: taskProvider.inProgressCount,
-                  color: Colors.blue,
-                  icon: Icons.work_outline,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _SummaryCard(
-                  title: 'Completed',
-                  count: taskProvider.completedCount,
-                  color: Colors.green,
-                  icon: Icons.check_circle_outline,
-                ),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryCard(
+              title: 'Pending',
+              count: taskProvider.pendingCount,
+              color: Colors.orange,
+              icon: Icons.pending_outlined,
+            ),
           ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SummaryCard(
+              title: 'In Progress',
+              count: taskProvider.inProgressCount,
+              color: Colors.blue,
+              icon: Icons.work_outline,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _SummaryCard(
+              title: 'Completed',
+              count: taskProvider.completedCount,
+              color: Colors.green,
+              icon: Icons.check_circle_outline,
+            ),
+          ),
+        ],
+      ),
         );
       },
     );
