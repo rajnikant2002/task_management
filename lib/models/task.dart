@@ -93,12 +93,14 @@ class Task {
               (json['updatedAt'] ?? json['updated_at'] ?? '').toString(),
             ) ??
             DateTime.now(),
-        extractedEntities: json['extractedEntities'] != null ||
+        extractedEntities:
+            json['extractedEntities'] != null ||
                 json['extracted_entities'] != null
             ? (json['extractedEntities'] ?? json['extracted_entities'])
-                as Map<String, dynamic>?
+                  as Map<String, dynamic>?
             : null,
-        suggestedActions: json['suggestedActions'] != null ||
+        suggestedActions:
+            json['suggestedActions'] != null ||
                 json['suggested_actions'] != null
             ? List<String>.from(
                 json['suggestedActions'] ?? json['suggested_actions'] ?? [],
@@ -160,13 +162,14 @@ class TaskClassification {
       priority: TaskPriority.fromString(
         json['priority']?.toString() ?? 'Medium',
       ),
-      extractedEntities: json['extractedEntities'] != null ||
+      extractedEntities:
+          json['extractedEntities'] != null ||
               json['extracted_entities'] != null
           ? (json['extractedEntities'] ?? json['extracted_entities'])
-              as Map<String, dynamic>?
+                as Map<String, dynamic>?
           : null,
-      suggestedActions: json['suggestedActions'] != null ||
-              json['suggested_actions'] != null
+      suggestedActions:
+          json['suggestedActions'] != null || json['suggested_actions'] != null
           ? List<String>.from(
               json['suggestedActions'] ?? json['suggested_actions'] ?? [],
             )
@@ -199,8 +202,8 @@ enum TaskStatus {
     }
     // Handle common variations
     final lowerValue = normalized.toLowerCase();
-    if (lowerValue == 'in progress' || 
-        lowerValue == 'inprogress' || 
+    if (lowerValue == 'in progress' ||
+        lowerValue == 'inprogress' ||
         lowerValue == 'in_progress') {
       return TaskStatus.inProgress;
     }

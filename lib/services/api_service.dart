@@ -19,8 +19,9 @@ class ApiService {
     _dio = Dio(
       BaseOptions(
         baseUrl: this.baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        connectTimeout: const Duration(seconds: 60), // Increased for Render.com
+        receiveTimeout: const Duration(seconds: 90), // Increased for slow database queries
+        sendTimeout: const Duration(seconds: 60),
       ),
     );
 
@@ -71,7 +72,44 @@ class ApiService {
       }).toList();
     } catch (e) {
       print('❌ Error fetching tasks: $e');
-      throw Exception('Failed to fetch tasks: $e');
+      
+      // Handle specific DioException types
+      if (e is DioException) {
+        // Handle 503 Service Unavailable (database connection issue)
+        if (e.response?.statusCode == 503) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        
+        // Handle timeout errors
+        if (e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          throw Exception(
+            'Request timeout. The server is taking too long to respond. '
+            'This may happen on Render.com free tier. Please try again.',
+          );
+        }
+        
+        // Handle connection errors
+        if (e.type == DioExceptionType.connectionError) {
+          throw Exception(
+            'Cannot connect to server. Please check your internet connection.',
+          );
+        }
+        
+        // Handle other HTTP errors
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final errorMessage = e.response?.data?['message'] ?? 
+              e.response?.data?['error'] ?? 
+              'Server error ($statusCode)';
+          throw Exception(errorMessage);
+        }
+      }
+      
+      throw Exception('Failed to fetch tasks: ${e.toString()}');
     }
   }
 
@@ -81,7 +119,20 @@ class ApiService {
       final serverTask = Task.fromJson(response.data['data'] ?? response.data);
       return _mergeWithLocal(serverTask, task);
     } catch (e) {
-      throw Exception('Failed to create task: $e');
+      if (e is DioException) {
+        if (e.response?.statusCode == 503) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              e.response?.data?['error'] ?? 
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to create task: ${e.toString()}');
     }
   }
 
@@ -95,7 +146,20 @@ class ApiService {
       final serverTask = Task.fromJson(response.data['data'] ?? response.data);
       return _mergeWithLocal(serverTask, task);
     } catch (e) {
-      throw Exception('Failed to update task: $e');
+      if (e is DioException) {
+        if (e.response?.statusCode == 503) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              e.response?.data?['error'] ?? 
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to update task: ${e.toString()}');
     }
   }
 

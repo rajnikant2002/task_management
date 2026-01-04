@@ -144,25 +144,45 @@ class _HomeScreenState extends State<HomeScreen> {
                     ? const SkeletonLoader()
                     : taskProvider.error != null && taskProvider.tasks.isEmpty
                     ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Error: ${taskProvider.error}',
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: () => taskProvider.refreshTasks(),
-                              child: const Text('Retry'),
-                            ),
-                          ],
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 64,
+                                color: Colors.red,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                'Connection Error',
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                              ),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                ),
+                                child: Text(
+                                  taskProvider.error ??
+                                      'Unknown error occurred',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: () => taskProvider.refreshTasks(),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry'),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     : taskProvider.tasks.isEmpty

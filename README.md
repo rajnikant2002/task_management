@@ -288,8 +288,6 @@ Response:
 }
 ```
 
-
-
 ## 📸 Screenshots
 
 ### Dashboard Screen

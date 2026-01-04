@@ -61,8 +61,15 @@ class TaskProvider with ChangeNotifier {
     try {
       _tasks = await _apiService.getTasks();
       _applyFilters();
+      _error = null; // Clear error on success
     } catch (e) {
-      _error = e.toString();
+      // Extract clean error message
+      String errorMessage = e.toString();
+      if (errorMessage.contains('Exception: ')) {
+        errorMessage = errorMessage.replaceFirst('Exception: ', '');
+      }
+      _error = errorMessage;
+      print('❌ TaskProvider error: $_error');
     } finally {
       _isLoading = false;
       notifyListeners();
