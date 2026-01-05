@@ -378,12 +378,37 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                     spacing: 8,
                     runSpacing: 8,
                     children: currentTask.extractedEntities!.entries
-                        // Hide internal helper keys like detected_category from UI
-                        .where((entry) => entry.key != 'detected_category')
+                        // Hide internal helper keys like detected_category and locations from UI
+                        .where(
+                          (entry) =>
+                              entry.key != 'detected_category' &&
+                              entry.key != 'locations',
+                        )
                         .map((entry) {
+                          // Format the value nicely for display
+                          // Backend sends clean arrays: ["2026-01-05"], ["Rajnikant"], ["meet"]
+                          // Flutter formats them for UI display
+                          String displayValue;
+                          if (entry.value is List) {
+                            final list = entry.value as List;
+                            // Format each item in the list
+                            displayValue = list
+                                .map((item) {
+                                  final itemStr = item.toString();
+                                  // Format dates if needed (remove time portion if present)
+                                  if (entry.key == 'dates' &&
+                                      itemStr.contains('T')) {
+                                    return itemStr.split('T')[0];
+                                  }
+                                  return itemStr;
+                                })
+                                .join(', ');
+                          } else {
+                            displayValue = entry.value.toString();
+                          }
                           return Chip(
                             avatar: const Icon(Icons.label_outline, size: 16),
-                            label: Text('${entry.key}: ${entry.value}'),
+                            label: Text('${entry.key}: $displayValue'),
                             backgroundColor: Colors.blue.shade50,
                           );
                         })

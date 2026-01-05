@@ -172,15 +172,20 @@ class ApiService {
   }
 
   /// Update task with category/priority override
+  /// categoryName should be one of: scheduling, finance, technical, safety, general
   Future<Task> updateTaskOverride(
     String taskId, {
-    required TaskCategory category,
+    required String categoryName,
     required TaskPriority priority,
   }) async {
     try {
       final response = await _dio.patch(
         '/tasks/$taskId',
-        data: {'category': category.value, 'priority': priority.value},
+        data: {
+          'category':
+              categoryName, // Send backend category name (e.g., "finance", "scheduling")
+          'priority': priority.value,
+        },
       );
       final serverTask = Task.fromJson(response.data['data'] ?? response.data);
       return serverTask;

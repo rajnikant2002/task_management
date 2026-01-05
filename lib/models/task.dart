@@ -132,16 +132,37 @@ class Task {
     }
   }
 
-  // Get the display category name (Scheduling, Finance, Technical, Safety, General)
-  // Uses detected_category from extractedEntities if available, otherwise uses category enum value
+  // Get the display category name (scheduling, finance, technical, safety, general)
+  // Always returns one of the 5 backend categories, never enum values like "work"
   String getDisplayCategoryName() {
+    // First, check if detected_category is in extractedEntities
     if (extractedEntities != null && 
         extractedEntities!.containsKey('detected_category')) {
-      return extractedEntities!['detected_category'] as String;
+      final detected = extractedEntities!['detected_category'] as String;
+      // Ensure it's one of the 5 backend categories
+      final lowerDetected = detected.toLowerCase();
+      if (['scheduling', 'finance', 'technical', 'safety', 'general'].contains(lowerDetected)) {
+        return lowerDetected;
+      }
     }
-    // If category is from backend and is a descriptive name, return it
-    // Otherwise return enum value
-    return category.value;
+    
+    // If category enum is work, we can't determine which backend category it is
+    // Default to "general" since we don't know if it's scheduling, finance, or technical
+    if (category == TaskCategory.work) {
+      return 'general'; // Default to general when backend category is unknown
+    }
+    
+    // Map other enum values to backend categories
+    switch (category) {
+      case TaskCategory.health:
+        return 'safety';
+      case TaskCategory.other:
+        return 'general';
+      case TaskCategory.work:
+        return 'general'; // Default fallback
+      default:
+        return 'general';
+    }
   }
 
   Map<String, dynamic> toJson() {

@@ -121,7 +121,7 @@ class TaskProvider with ChangeNotifier {
   /// Update task with category/priority override
   Future<void> updateTaskWithOverride(
     String taskId, {
-    required TaskCategory category,
+    required String categoryName,
     required TaskPriority priority,
   }) async {
     _isLoading = true;
@@ -131,7 +131,7 @@ class TaskProvider with ChangeNotifier {
     try {
       final updatedTask = await _apiService.updateTaskOverride(
         taskId,
-        category: category,
+        categoryName: categoryName,
         priority: priority,
       );
       final index = _tasks.indexWhere((t) => t.id == taskId);

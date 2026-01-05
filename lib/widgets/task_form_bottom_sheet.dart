@@ -130,17 +130,22 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       context: context,
       builder: (context) => ClassificationPreviewDialog(
         task: task,
-        onConfirm: (category, priority) async {
+        onConfirm: (categoryName, priority) async {
+          // Get current category name from task
+          final currentCategoryName = task
+              .getDisplayCategoryName()
+              .toLowerCase();
+
           // Check if user overrode category or priority
           final hasOverride =
-              category != task.category || priority != task.priority;
+              categoryName != currentCategoryName || priority != task.priority;
 
           if (hasOverride) {
-            // Send override to backend
+            // Send override to backend with backend category name
             try {
               await taskProvider.updateTaskWithOverride(
                 task.id,
-                category: category,
+                categoryName: categoryName,
                 priority: priority,
               );
             } catch (e) {
