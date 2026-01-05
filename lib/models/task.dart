@@ -138,37 +138,20 @@ class Task {
   String getDisplayCategoryName() => backendCategoryName ?? 'general';
 
   Map<String, dynamic> toJson() {
-    // Backend expects: scheduling, finance, technical, safety, general
-    // NEVER send enum values like "Work", "Personal", etc.
-    // Only send category if we have the actual backend category name
+    // Send only user-editable fields in snake_case (backend format)
+    // Priority, category, extracted_entities, suggested_actions come from backend auto-suggestion
+    // Used only for regular updates (not raw updates)
     final json = <String, dynamic>{
       'id': id,
       'title': title,
       'description': description,
-      // Send both camelCase and snake_case to align with backend expectations
-      'dueDate': dueDate?.toIso8601String(),
-      'due_date': dueDate?.toIso8601String(),
-      'assignedTo': assignedTo,
+      if (dueDate != null) 'due_date': dueDate!.toIso8601String(),
       'assigned_to': assignedTo,
-      'status': status.value,
-      'task_status': status.value,
-      'priority': priority.value,
-      'task_priority':
-          priority.value, // Also send snake_case for backend compatibility
-      'createdAt': createdAt.toIso8601String(),
-      'created_at': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
-      if (extractedEntities != null) 'extractedEntities': extractedEntities,
-      if (extractedEntities != null) 'extracted_entities': extractedEntities,
-      if (suggestedActions != null) 'suggestedActions': suggestedActions,
-      if (suggestedActions != null) 'suggested_actions': suggestedActions,
+      'status': status.value, // Status can be user-changed (e.g., mark as completed)
+      // Priority comes from backend - don't send
+      // Category comes from backend - don't send (unless override)
+      // extracted_entities and suggested_actions come from backend - don't send
     };
-
-    // Only send category if we have backend category name (let backend keep existing if null)
-    if (backendCategoryName != null) {
-      json['category'] = backendCategoryName;
-    }
 
     return json;
   }
