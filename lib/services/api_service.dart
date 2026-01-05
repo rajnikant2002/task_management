@@ -184,6 +184,36 @@ class ApiService {
     }
   }
 
+  /// Update task with raw data to trigger re-classification (when title/description changes)
+  Future<Task> updateTaskRaw(
+    String taskId,
+    Map<String, dynamic> rawData,
+  ) async {
+    try {
+      // Send only raw user input to trigger backend re-classification
+      final response = await _dio.patch('/tasks/$taskId', data: rawData);
+      final serverTask = Task.fromJson(response.data['data'] ?? response.data);
+      return serverTask; // Backend re-classified the task
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 503) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              e.response?.data?['error'] ??
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to update task: ${e.toString()}');
+    }
+  }
+
   Future<Task> updateTask(Task task) async {
     try {
       // Backend uses PATCH /api/tasks/{id}

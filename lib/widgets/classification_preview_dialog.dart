@@ -4,16 +4,15 @@ import '../models/task.dart';
 // Helper class for backend category options (5 categories from backend)
 class BackendCategory {
   final String name;
-  final TaskCategory enumValue;
 
-  const BackendCategory(this.name, this.enumValue);
+  const BackendCategory(this.name);
 
   static const List<BackendCategory> backendCategories = [
-    BackendCategory('scheduling', TaskCategory.work),
-    BackendCategory('finance', TaskCategory.work),
-    BackendCategory('technical', TaskCategory.work),
-    BackendCategory('safety', TaskCategory.health),
-    BackendCategory('general', TaskCategory.other),
+    BackendCategory('scheduling'),
+    BackendCategory('finance'),
+    BackendCategory('technical'),
+    BackendCategory('safety'),
+    BackendCategory('general'),
   ];
 
   static BackendCategory fromName(String name) {
@@ -22,7 +21,7 @@ class BackendCategory {
         (cat) => cat.name.toLowerCase() == name.toLowerCase(),
       );
     } catch (e) {
-      return const BackendCategory('general', TaskCategory.other);
+      return const BackendCategory('general');
     }
   }
 }
@@ -85,7 +84,7 @@ class ClassificationPreviewDialog extends StatelessWidget {
                   _BackendCategoryItem(
                     label: 'Category',
                     value: currentBackendCategory.name,
-                    color: TaskCategory.getColorFromBackendCategory(
+                    color: TaskCategoryHelper.getColorFromBackendCategory(
                       selectedBackendCategory.name,
                     ),
                     canOverride: true,

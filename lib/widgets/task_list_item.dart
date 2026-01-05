@@ -129,7 +129,7 @@ class _CategoryChip extends StatelessWidget {
         categoryName,
         style: const TextStyle(fontSize: 11, color: Colors.white),
       ),
-      backgroundColor: TaskCategory.getColorFromBackendCategory(task.backendCategoryName),
+      backgroundColor: TaskCategoryHelper.getColorFromBackendCategory(task.backendCategoryName),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,

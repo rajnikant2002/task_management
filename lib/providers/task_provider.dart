@@ -23,7 +23,8 @@ class TaskProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   String _searchQuery = '';
-  TaskCategory? _selectedCategory;
+  String?
+  _selectedCategory; // Use backend category name (scheduling, finance, etc.)
   TaskPriority? _selectedPriority;
   TaskStatus? _selectedStatus;
 
@@ -33,7 +34,7 @@ class TaskProvider with ChangeNotifier {
   bool get isConnected => _connectivityService.isConnected;
 
   // Filter getters
-  TaskCategory? get selectedCategory => _selectedCategory;
+  String? get selectedCategory => _selectedCategory; // Backend category name
   TaskPriority? get selectedPriority => _selectedPriority;
   TaskStatus? get selectedStatus => _selectedStatus;
 
@@ -97,6 +98,26 @@ class TaskProvider with ChangeNotifier {
     } finally {
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  /// Update task with raw data to trigger re-classification
+  Future<Task> updateTaskRaw(
+    String taskId,
+    Map<String, dynamic> rawData,
+  ) async {
+    try {
+      final updatedTask = await _apiService.updateTaskRaw(taskId, rawData);
+      // Update task in list
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+      }
+      _applyFilters();
+      return updatedTask;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
     }
   }
 
@@ -186,8 +207,8 @@ class TaskProvider with ChangeNotifier {
     _applyFilters();
   }
 
-  void setCategoryFilter(TaskCategory? category) {
-    _selectedCategory = category;
+  void setCategoryFilter(String? categoryName) {
+    _selectedCategory = categoryName;
     _applyFilters();
   }
 
@@ -217,7 +238,8 @@ class TaskProvider with ChangeNotifier {
           task.description.toLowerCase().contains(_searchQuery.toLowerCase());
 
       final matchesCategory =
-          _selectedCategory == null || task.category == _selectedCategory;
+          _selectedCategory == null ||
+          task.backendCategoryName == _selectedCategory;
       final matchesPriority =
           _selectedPriority == null || task.priority == _selectedPriority;
       final matchesStatus =

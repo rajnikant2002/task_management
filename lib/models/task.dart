@@ -7,7 +7,7 @@ class Task {
   final DateTime? dueDate;
   final String assignedTo;
   final TaskStatus status;
-  final TaskCategory category;
+  final TaskCategory? category; // Optional - use backendCategoryName instead
   final TaskPriority priority;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -23,7 +23,7 @@ class Task {
     required this.dueDate,
     required this.assignedTo,
     required this.status,
-    required this.category,
+    this.category,
     required this.priority,
     required this.createdAt,
     required this.updatedAt,
@@ -82,9 +82,8 @@ class Task {
               json['task_status']?.toString() ??
               'Pending',
         ),
-        category: TaskCategory.fromString(
-          json['category']?.toString() ?? 'Other',
-        ),
+        // Category enum not needed - use backendCategoryName instead
+        category: null,
         // Preserve original backend category name
         backendCategoryName: () {
           final catStr = (json['category']?.toString() ?? '').toLowerCase();
@@ -214,6 +213,7 @@ enum TaskStatus {
   }
 }
 
+// Minimal enum - only kept for type safety, not used for logic
 enum TaskCategory {
   work('Work'),
   personal('Personal'),
@@ -223,34 +223,10 @@ enum TaskCategory {
 
   final String value;
   const TaskCategory(this.value);
+}
 
-  static TaskCategory fromString(String value) {
-    final normalized = value.trim();
-
-    // First try exact match with enum values
-    for (final category in TaskCategory.values) {
-      if (category.value.toLowerCase() == normalized.toLowerCase()) {
-        return category;
-      }
-    }
-
-    // Handle descriptive category names (Scheduling, Finance, Technical, Safety, General)
-    // Map them to appropriate enum values
-    final lowerValue = normalized.toLowerCase();
-    switch (lowerValue) {
-      case 'scheduling':
-      case 'finance':
-      case 'technical':
-        return TaskCategory.work; // All map to Work
-      case 'safety':
-        return TaskCategory.health; // Safety maps to Health
-      case 'general':
-        return TaskCategory.other; // General maps to Other
-      default:
-        return TaskCategory.other;
-    }
-  }
-
+// Helper class for backend category colors (not using enum)
+class TaskCategoryHelper {
   // Get color based on backend category name
   static Color getColorFromBackendCategory(String? backendCategoryName) {
     switch (backendCategoryName?.toLowerCase()) {
@@ -278,36 +254,17 @@ enum TaskPriority {
   final String value;
   const TaskPriority(this.value);
 
+  // Simple parsing - backend sends "low", "medium", or "high"
   static TaskPriority fromString(String value) {
-    if (value.isEmpty || value.trim().isEmpty) {
-      return TaskPriority.medium;
-    }
-
     final normalized = value.trim().toLowerCase();
 
-    // First try to match display values like "Low", "Medium", "High" ignoring case
-    for (final p in TaskPriority.values) {
-      if (p.value.toLowerCase() == normalized) {
-        return p;
-      }
-    }
-
-    // Handle common variations and raw backend values
+    // Backend sends: "low", "medium", "high" (case-insensitive)
     switch (normalized) {
       case 'low':
-      case '1':
-      case 'lowest':
         return TaskPriority.low;
       case 'high':
-      case '3':
-      case 'highest':
-      case 'urgent':
-      case 'critical':
         return TaskPriority.high;
       case 'medium':
-      case '2':
-      case 'normal':
-      case 'moderate':
       default:
         return TaskPriority.medium;
     }

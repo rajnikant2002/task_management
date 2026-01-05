@@ -88,28 +88,64 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
           await _showClassificationPreview(createdTask, taskProvider);
         }
       } else {
-        // EDITING EXISTING TASK: Use existing logic
-        final task = Task(
-          id: widget.task!.id,
-          title: _titleController.text,
-          description: _descriptionController.text,
-          dueDate: _selectedDueDate,
-          assignedTo: _assignedToController.text,
-          status: widget.task!.status,
-          category: widget.task!.category,
-          priority: widget.task!.priority,
-          createdAt: widget.task!.createdAt,
-          updatedAt: DateTime.now(),
-          extractedEntities: widget.task!.extractedEntities,
-          suggestedActions: widget.task!.suggestedActions,
-        );
+        // EDITING EXISTING TASK
+        final originalTask = widget.task!;
+        final newTitle = _titleController.text;
+        final newDescription = _descriptionController.text;
 
-        await taskProvider.updateTask(task);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Task updated successfully')),
+        // Check if title or description changed (triggers re-classification)
+        final titleChanged = newTitle != originalTask.title;
+        final descriptionChanged = newDescription != originalTask.description;
+
+        if (titleChanged || descriptionChanged) {
+          // Title or description changed - trigger re-classification from backend
+          final rawTaskData = {
+            'title': newTitle,
+            'description': newDescription,
+            if (_selectedDueDate != null)
+              'due_date': _selectedDueDate!.toIso8601String(),
+            'assigned_to': _assignedToController.text,
+          };
+
+          // Update with raw data to trigger backend re-classification
+          final updatedTask = await taskProvider.updateTaskRaw(
+            originalTask.id,
+            rawTaskData,
           );
-          Navigator.of(context).pop();
+
+          // Show classification preview (same as create flow)
+          await _showClassificationPreview(updatedTask, taskProvider);
+
+          if (context.mounted) {
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
+            }
+          }
+        } else {
+          // Only other fields changed (due date, assigned to) - regular update
+          final task = Task(
+            id: originalTask.id,
+            title: newTitle,
+            description: newDescription,
+            dueDate: _selectedDueDate,
+            assignedTo: _assignedToController.text,
+            status: originalTask.status,
+            category: null,
+            priority: originalTask.priority,
+            createdAt: originalTask.createdAt,
+            updatedAt: DateTime.now(),
+            extractedEntities: originalTask.extractedEntities,
+            suggestedActions: originalTask.suggestedActions,
+            backendCategoryName: originalTask.backendCategoryName,
+          );
+
+          await taskProvider.updateTask(task);
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Task updated successfully')),
+            );
+            Navigator.of(context).pop();
+          }
         }
       }
     } catch (e) {
