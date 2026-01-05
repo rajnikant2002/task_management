@@ -147,7 +147,8 @@ class Task {
       'description': description,
       if (dueDate != null) 'due_date': dueDate!.toIso8601String(),
       'assigned_to': assignedTo,
-      'status': status.value, // Status can be user-changed (e.g., mark as completed)
+      'status':
+          status.value, // Status can be user-changed (e.g., mark as completed)
       // Priority comes from backend - don't send
       // Category comes from backend - don't send (unless override)
       // extracted_entities and suggested_actions come from backend - don't send

@@ -355,10 +355,13 @@ class _ClassificationItem extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<dynamic>(
-            value: options.firstWhere(
-              (opt) => opt.value == currentValue,
-              orElse: () => options.first,
-            ),
+            value: () {
+              try {
+                return options.firstWhere((opt) => opt.value == currentValue);
+              } catch (e) {
+                return options.isNotEmpty ? options.first : null;
+              }
+            }(),
             decoration: const InputDecoration(
               border: OutlineInputBorder(),
               contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
