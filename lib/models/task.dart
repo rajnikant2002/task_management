@@ -20,7 +20,7 @@ class Task {
     required this.id,
     required this.title,
     required this.description,
-    this.dueDate,
+    required this.dueDate,
     required this.assignedTo,
     required this.status,
     required this.category,
@@ -85,20 +85,17 @@ class Task {
         category: TaskCategory.fromString(
           json['category']?.toString() ?? 'Other',
         ),
-        // Preserve original backend category name (scheduling, finance, technical, safety, general)
+        // Preserve original backend category name
         backendCategoryName: () {
           final catStr = (json['category']?.toString() ?? '').toLowerCase();
-          // Only store if it's one of the 5 backend categories
-          if ([
+          const backendCategories = [
             'scheduling',
             'finance',
             'technical',
             'safety',
             'general',
-          ].contains(catStr)) {
-            return catStr;
-          }
-          return null;
+          ];
+          return backendCategories.contains(catStr) ? catStr : null;
         }(),
         priority: TaskPriority.fromString(
           json['priority']?.toString() ??
@@ -139,16 +136,7 @@ class Task {
   }
 
   // Get the display category name directly from backend
-  // Returns the original backend category name (scheduling, finance, technical, safety, general)
-  String getDisplayCategoryName() {
-    // Use stored backend category name if available (this is the original from backend)
-    if (backendCategoryName != null) {
-      return backendCategoryName!;
-    }
-
-    // Fallback: if backend didn't send category name, default to general
-    return 'general';
-  }
+  String getDisplayCategoryName() => backendCategoryName ?? 'general';
 
   Map<String, dynamic> toJson() {
     // Backend expects: scheduling, finance, technical, safety, general
@@ -178,13 +166,10 @@ class Task {
       if (suggestedActions != null) 'suggested_actions': suggestedActions,
     };
 
-    // Only send category if we have the backend category name
-    // If backendCategoryName is null, don't send category - let backend keep existing value
+    // Only send category if we have backend category name (let backend keep existing if null)
     if (backendCategoryName != null) {
       json['category'] = backendCategoryName;
     }
-    // If backendCategoryName is null, we don't include 'category' in the JSON
-    // This lets the backend keep the existing category value
 
     return json;
   }
@@ -266,17 +251,20 @@ enum TaskCategory {
     }
   }
 
-  static Color getColor(TaskCategory category) {
-    switch (category) {
-      case TaskCategory.work:
-        return Colors.blue;
-      case TaskCategory.personal:
+  // Get color based on backend category name
+  static Color getColorFromBackendCategory(String? backendCategoryName) {
+    switch (backendCategoryName?.toLowerCase()) {
+      case 'scheduling':
         return Colors.green;
-      case TaskCategory.shopping:
+      case 'finance':
         return Colors.orange;
-      case TaskCategory.health:
+      case 'technical':
+        return Colors.blue;
+      case 'safety':
         return Colors.red;
-      case TaskCategory.other:
+      case 'general':
+        return Colors.grey;
+      default:
         return Colors.grey;
     }
   }

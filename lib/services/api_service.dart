@@ -191,8 +191,8 @@ class ApiService {
         '/tasks/${task.id}',
         data: task.toJson(),
       );
-      final serverTask = Task.fromJson(response.data['data'] ?? response.data);
-      return _mergeWithLocal(serverTask, task);
+      // Backend is source of truth - use server response directly
+      return Task.fromJson(response.data['data'] ?? response.data);
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 503) {
@@ -211,32 +211,6 @@ class ApiService {
       }
       throw Exception('Failed to update task: ${e.toString()}');
     }
-  }
-
-  Task _mergeWithLocal(Task server, Task local) {
-    // Backend now handles all classification and generates extractedEntities/suggestedActions
-    // Always use server's data as it's the source of truth - no client-side transformations
-    return local.copyWith(
-      id: server.id.isNotEmpty ? server.id : local.id,
-      title: server.title.isNotEmpty ? server.title : local.title,
-      description: server.description.isNotEmpty
-          ? server.description
-          : local.description,
-      dueDate: server.dueDate ?? local.dueDate,
-      assignedTo: server.assignedTo.isNotEmpty
-          ? server.assignedTo
-          : local.assignedTo,
-      status: server.status,
-      category: server.category,
-      priority: server.priority,
-      createdAt: server.createdAt,
-      updatedAt: server.updatedAt,
-      // Use server's data directly - no modifications
-      extractedEntities: server.extractedEntities,
-      suggestedActions: server.suggestedActions,
-      backendCategoryName:
-          server.backendCategoryName, // Preserve backend category name
-    );
   }
 
   Future<void> deleteTask(String id) async {

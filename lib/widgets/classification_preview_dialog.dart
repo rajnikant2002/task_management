@@ -39,8 +39,9 @@ class ClassificationPreviewDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get category and priority directly from backend task
-    final backendCategoryName = task.getDisplayCategoryName().toLowerCase();
+    // Get category directly from backend (no need for getDisplayCategoryName)
+    final backendCategoryName = (task.backendCategoryName ?? 'general')
+        .toLowerCase();
     final currentBackendCategory = BackendCategory.fromName(
       backendCategoryName,
     );
@@ -84,8 +85,8 @@ class ClassificationPreviewDialog extends StatelessWidget {
                   _BackendCategoryItem(
                     label: 'Category',
                     value: currentBackendCategory.name,
-                    color: TaskCategory.getColor(
-                      selectedBackendCategory.enumValue,
+                    color: TaskCategory.getColorFromBackendCategory(
+                      selectedBackendCategory.name,
                     ),
                     canOverride: true,
                     currentValue: selectedBackendCategory.name,
@@ -135,9 +136,28 @@ class ClassificationPreviewDialog extends StatelessWidget {
                             // Format backend data for display
                             final displayValue = entry.value is List
                                 ? (entry.value as List)
+                                      .where((item) {
+                                        // For dates, filter out relative strings like "today", "tomorrow"
+                                        if (entry.key == 'dates') {
+                                          final str = item
+                                              .toString()
+                                              .toLowerCase();
+                                          final relativeDates = [
+                                            'today',
+                                            'tomorrow',
+                                            'yesterday',
+                                            'next week',
+                                            'this week',
+                                          ];
+                                          if (relativeDates.contains(str)) {
+                                            return false; // Filter out relative dates
+                                          }
+                                        }
+                                        return true;
+                                      })
                                       .map((item) {
                                         final str = item.toString();
-                                        // Remove time portion from dates
+                                        // Remove time portion from dates (keep only YYYY-MM-DD)
                                         return entry.key == 'dates' &&
                                                 str.contains('T')
                                             ? str.split('T')[0]

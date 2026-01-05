@@ -122,15 +122,14 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Use detected category name if available, otherwise use enum value
-    final categoryName = task.getDisplayCategoryName();
+    final categoryName = task.backendCategoryName ?? 'general';
     
     return Chip(
       label: Text(
         categoryName,
         style: const TextStyle(fontSize: 11, color: Colors.white),
       ),
-      backgroundColor: TaskCategory.getColor(task.category),
+      backgroundColor: TaskCategory.getColorFromBackendCategory(task.backendCategoryName),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,

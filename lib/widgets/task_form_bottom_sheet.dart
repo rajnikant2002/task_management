@@ -131,9 +131,8 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       builder: (context) => ClassificationPreviewDialog(
         task: task,
         onConfirm: (categoryName, priority) async {
-          // Get current category name from task
-          final currentCategoryName = task
-              .getDisplayCategoryName()
+          // Get current category name directly from backend
+          final currentCategoryName = (task.backendCategoryName ?? 'general')
               .toLowerCase();
 
           // Check if user overrode category or priority

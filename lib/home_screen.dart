@@ -196,7 +196,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             return TaskListItem(
                               task: task,
                               onTap: () {
-                                // The modal will automatically update pending tasks to in progress
                                 _showTaskDetails(task, taskProvider);
                               },
                               onEdit: () => _showTaskForm(task: task),
@@ -295,8 +294,7 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
-        // Get the latest task from the provider to ensure we have the most up-to-date data
-        // Use getTaskById to get from the full list, not just filtered tasks
+        // Get latest task from provider
         final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
 
         return Padding(
@@ -338,7 +336,7 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   children: [
                     Chip(
                       avatar: const Icon(Icons.category, size: 16),
-                      label: Text(currentTask.getDisplayCategoryName()),
+                      label: Text(currentTask.backendCategoryName ?? 'general'),
                     ),
                     Chip(
                       avatar: const Icon(Icons.flag, size: 16),
@@ -385,27 +383,39 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                               entry.key != 'locations',
                         )
                         .map((entry) {
-                          // Format the value nicely for display
-                          // Backend sends clean arrays: ["2026-01-05"], ["Rajnikant"], ["meet"]
-                          // Flutter formats them for UI display
-                          String displayValue;
-                          if (entry.value is List) {
-                            final list = entry.value as List;
-                            // Format each item in the list
-                            displayValue = list
-                                .map((item) {
-                                  final itemStr = item.toString();
-                                  // Format dates if needed (remove time portion if present)
-                                  if (entry.key == 'dates' &&
-                                      itemStr.contains('T')) {
-                                    return itemStr.split('T')[0];
-                                  }
-                                  return itemStr;
-                                })
-                                .join(', ');
-                          } else {
-                            displayValue = entry.value.toString();
-                          }
+                          // Format backend data for display
+                          final displayValue = entry.value is List
+                              ? (entry.value as List)
+                                    .where((item) {
+                                      // Filter out relative date strings
+                                      if (entry.key == 'dates') {
+                                        final str = item
+                                            .toString()
+                                            .toLowerCase();
+                                        const relativeDates = [
+                                          'today',
+                                          'tomorrow',
+                                          'yesterday',
+                                          'next week',
+                                          'this week',
+                                        ];
+                                        if (relativeDates.contains(str)) {
+                                          return false;
+                                        }
+                                      }
+                                      return true;
+                                    })
+                                    .map((item) {
+                                      final str = item.toString();
+                                      // Remove time portion from dates
+                                      return entry.key == 'dates' &&
+                                              str.contains('T')
+                                          ? str.split('T')[0]
+                                          : str;
+                                    })
+                                    .join(', ')
+                              : entry.value.toString();
+
                           return Chip(
                             avatar: const Icon(Icons.label_outline, size: 16),
                             label: Text('${entry.key}: $displayValue'),
@@ -514,7 +524,6 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                             content: Text('Task marked as completed'),
                           ),
                         );
-                        // Don't close the modal, let it update to show the new status
                       }
                     },
                     icon: const Icon(Icons.check_circle_outline),
