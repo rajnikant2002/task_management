@@ -10,38 +10,38 @@ class FilterChips extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, taskProvider, _) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _FilterChip(
-            label: 'All Categories',
-            isSelected: taskProvider.selectedCategory == null,
-            onTap: () => taskProvider.setCategoryFilter(null),
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              _FilterChip(
+                label: 'All Categories',
+                isSelected: taskProvider.selectedCategory == null,
+                onTap: () => taskProvider.setCategoryFilter(null),
+              ),
+              ...TaskCategory.values.map(
+                (category) => _FilterChip(
+                  label: category.value,
+                  isSelected: taskProvider.selectedCategory == category,
+                  onTap: () => taskProvider.setCategoryFilter(category),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _FilterChip(
+                label: 'All Priorities',
+                isSelected: taskProvider.selectedPriority == null,
+                onTap: () => taskProvider.setPriorityFilter(null),
+              ),
+              ...TaskPriority.values.map(
+                (priority) => _FilterChip(
+                  label: priority.value,
+                  isSelected: taskProvider.selectedPriority == priority,
+                  onTap: () => taskProvider.setPriorityFilter(priority),
+                ),
+              ),
+            ],
           ),
-          ...TaskCategory.values.map(
-            (category) => _FilterChip(
-              label: category.value,
-              isSelected: taskProvider.selectedCategory == category,
-              onTap: () => taskProvider.setCategoryFilter(category),
-            ),
-          ),
-          const SizedBox(width: 8),
-          _FilterChip(
-            label: 'All Priorities',
-            isSelected: taskProvider.selectedPriority == null,
-            onTap: () => taskProvider.setPriorityFilter(null),
-          ),
-          ...TaskPriority.values.map(
-            (priority) => _FilterChip(
-              label: priority.value,
-              isSelected: taskProvider.selectedPriority == priority,
-              onTap: () => taskProvider.setPriorityFilter(priority),
-            ),
-          ),
-        ],
-      ),
         );
       },
     );
