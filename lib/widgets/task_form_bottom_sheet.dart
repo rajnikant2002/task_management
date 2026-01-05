@@ -85,7 +85,11 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
 
         if (context.mounted) {
           // Show preview dialog with auto-generated classification
-          await _showClassificationPreview(createdTask, taskProvider);
+          await _showClassificationPreview(
+            createdTask,
+            taskProvider,
+            isEditing: false,
+          );
         }
       } else {
         // EDITING EXISTING TASK
@@ -114,7 +118,11 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
           );
 
           // Show classification preview (same as create flow)
-          await _showClassificationPreview(updatedTask, taskProvider);
+          await _showClassificationPreview(
+            updatedTask,
+            taskProvider,
+            isEditing: true,
+          );
 
           if (context.mounted) {
             if (Navigator.of(context).canPop()) {
@@ -159,13 +167,15 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
 
   Future<void> _showClassificationPreview(
     Task task,
-    TaskProvider taskProvider,
-  ) async {
+    TaskProvider taskProvider, {
+    required bool isEditing,
+  }) async {
     // Show preview dialog with task from backend
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => ClassificationPreviewDialog(
         task: task,
+        isEditing: isEditing,
         onConfirm: (categoryName, priority) async {
           // Get current category name directly from backend
           final currentCategoryName = (task.backendCategoryName ?? 'general')

@@ -29,11 +29,13 @@ class BackendCategory {
 class ClassificationPreviewDialog extends StatelessWidget {
   final Task task;
   final Function(String categoryName, TaskPriority priority) onConfirm;
+  final bool isEditing; // true if editing existing task, false if creating new
 
   const ClassificationPreviewDialog({
     super.key,
     required this.task,
     required this.onConfirm,
+    this.isEditing = false,
   });
 
   @override
@@ -217,7 +219,7 @@ class ClassificationPreviewDialog extends StatelessWidget {
               onPressed: () async {
                 await onConfirm(selectedBackendCategory.name, selectedPriority);
               },
-              child: const Text('Confirm & Create'),
+              child: Text(isEditing ? 'Confirm & Update' : 'Confirm & Create'),
             ),
           ],
         );
