@@ -13,6 +13,7 @@ class Task {
   final DateTime updatedAt;
   final Map<String, dynamic>? extractedEntities;
   final List<String>? suggestedActions;
+  final String? backendCategoryName; // Store original backend category name (scheduling, finance, etc.)
 
   Task({
     required this.id,
@@ -27,6 +28,7 @@ class Task {
     required this.updatedAt,
     this.extractedEntities,
     this.suggestedActions,
+    this.backendCategoryName,
   });
 
   Task copyWith({
@@ -42,6 +44,7 @@ class Task {
     DateTime? updatedAt,
     Map<String, dynamic>? extractedEntities,
     List<String>? suggestedActions,
+    String? backendCategoryName,
   }) {
     return Task(
       id: id ?? this.id,
@@ -56,6 +59,7 @@ class Task {
       updatedAt: updatedAt ?? this.updatedAt,
       extractedEntities: extractedEntities ?? this.extractedEntities,
       suggestedActions: suggestedActions ?? this.suggestedActions,
+      backendCategoryName: backendCategoryName ?? this.backendCategoryName,
     );
   }
 
@@ -80,6 +84,15 @@ class Task {
         category: TaskCategory.fromString(
           json['category']?.toString() ?? 'Other',
         ),
+        // Preserve original backend category name (scheduling, finance, technical, safety, general)
+        backendCategoryName: () {
+          final catStr = (json['category']?.toString() ?? '').toLowerCase();
+          // Only store if it's one of the 5 backend categories
+          if (['scheduling', 'finance', 'technical', 'safety', 'general'].contains(catStr)) {
+            return catStr;
+          }
+          return null;
+        }(),
         priority: TaskPriority.fromString(
           json['priority']?.toString() ?? 
           json['task_priority']?.toString() ?? 
@@ -95,28 +108,13 @@ class Task {
               (json['updatedAt'] ?? json['updated_at'] ?? '').toString(),
             ) ??
             DateTime.now(),
-        // Preserve detected category name from backend if it's a descriptive name
-        extractedEntities: () {
-          final categoryFromBackend = json['category']?.toString() ?? '';
-          final descriptiveCategories = ['Scheduling', 'Finance', 'Technical', 'Safety', 'General'];
-          
-          // Get existing extractedEntities or create new map
-          Map<String, dynamic>? entities;
-          if (json['extractedEntities'] != null || json['extracted_entities'] != null) {
-            entities = Map<String, dynamic>.from(
-              json['extractedEntities'] ?? json['extracted_entities'] ?? {},
-            );
-          } else {
-            entities = <String, dynamic>{};
-          }
-          
-          // If backend sent a descriptive category name, preserve it
-          if (descriptiveCategories.contains(categoryFromBackend)) {
-            entities['detected_category'] = categoryFromBackend;
-          }
-          
-          return entities.isEmpty ? null : entities;
-        }(),
+        // Use extractedEntities directly from backend - no client-side modifications
+        extractedEntities:
+            json['extractedEntities'] != null || json['extracted_entities'] != null
+                ? Map<String, dynamic>.from(
+                    json['extractedEntities'] ?? json['extracted_entities'] ?? {},
+                  )
+                : null,
         suggestedActions:
             json['suggestedActions'] != null ||
                 json['suggested_actions'] != null
@@ -132,46 +130,22 @@ class Task {
     }
   }
 
-  // Get the display category name (scheduling, finance, technical, safety, general)
-  // Always returns one of the 5 backend categories, never enum values like "work"
+  // Get the display category name directly from backend
+  // Returns the original backend category name (scheduling, finance, technical, safety, general)
   String getDisplayCategoryName() {
-    // First, check if detected_category is in extractedEntities
-    if (extractedEntities != null && 
-        extractedEntities!.containsKey('detected_category')) {
-      final detected = extractedEntities!['detected_category'] as String;
-      // Ensure it's one of the 5 backend categories
-      final lowerDetected = detected.toLowerCase();
-      if (['scheduling', 'finance', 'technical', 'safety', 'general'].contains(lowerDetected)) {
-        return lowerDetected;
-      }
+    // Use stored backend category name if available (this is the original from backend)
+    if (backendCategoryName != null) {
+      return backendCategoryName!;
     }
     
-    // If category enum is work, we can't determine which backend category it is
-    // Default to "general" since we don't know if it's scheduling, finance, or technical
-    if (category == TaskCategory.work) {
-      return 'general'; // Default to general when backend category is unknown
-    }
-    
-    // Map other enum values to backend categories
-    switch (category) {
-      case TaskCategory.health:
-        return 'safety';
-      case TaskCategory.other:
-        return 'general';
-      case TaskCategory.work:
-        return 'general'; // Default fallback
-      default:
-        return 'general';
-    }
+    // Fallback: if backend didn't send category name, default to general
+    return 'general';
   }
 
   Map<String, dynamic> toJson() {
-    // Use detected category name from extractedEntities if available, otherwise use enum value
-    String categoryValue = category.value;
-    if (extractedEntities != null && 
-        extractedEntities!.containsKey('detected_category')) {
-      categoryValue = extractedEntities!['detected_category'] as String;
-    }
+    // Use backend category name if available, otherwise use enum value
+    // Backend expects: scheduling, finance, technical, safety, general
+    final categoryValue = backendCategoryName ?? category.value;
     
     return {
       'id': id,
@@ -184,7 +158,7 @@ class Task {
       'assigned_to': assignedTo,
       'status': status.value,
       'task_status': status.value,
-      'category': categoryValue, // Use detected category name (Scheduling, Finance, etc.)
+      'category': categoryValue, // Use backend category name directly
       'priority': priority.value,
       'task_priority': priority.value, // Also send snake_case for backend compatibility
       'createdAt': createdAt.toIso8601String(),
