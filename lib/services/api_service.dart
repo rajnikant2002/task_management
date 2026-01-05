@@ -173,6 +173,7 @@ class ApiService {
 
   Task _mergeWithLocal(Task server, Task local) {
     // Some backends omit optional fields in the response; keep local values when missing.
+    // Always use server's ID if available (backend generates the real ID)
     return local.copyWith(
       id: server.id.isNotEmpty ? server.id : local.id,
       title: server.title.isNotEmpty ? server.title : local.title,
@@ -188,14 +189,46 @@ class ApiService {
       priority: server.priority,
       createdAt: server.createdAt,
       updatedAt: server.updatedAt,
+      // Preserve local extractedEntities and suggestedActions if server doesn't provide them
+      extractedEntities: server.extractedEntities ?? local.extractedEntities,
+      suggestedActions: server.suggestedActions ?? local.suggestedActions,
     );
   }
 
   Future<void> deleteTask(String id) async {
     try {
-      await _dio.delete('/tasks/$id');
+      // Validate ID
+      if (id.isEmpty) {
+        throw Exception('Cannot delete task: Invalid task ID');
+      }
+      
+      // URL encode the ID to handle special characters
+      final encodedId = Uri.encodeComponent(id);
+      print('🗑️ Attempting to delete task with ID: $id (encoded: $encodedId)');
+      await _dio.delete('/tasks/$encodedId');
+      print('✅ Task deleted successfully');
     } catch (e) {
-      throw Exception('Failed to delete task: $e');
+      if (e is DioException) {
+        if (e.response?.statusCode == 404) {
+          final errorMessage = e.response?.data?['message'] ?? 
+              'Task not found (ID: $id). It may have already been deleted.';
+          throw Exception(errorMessage);
+        }
+        if (e.response?.statusCode == 503) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              e.response?.data?['error'] ??
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to delete task: ${e.toString()}');
     }
   }
 

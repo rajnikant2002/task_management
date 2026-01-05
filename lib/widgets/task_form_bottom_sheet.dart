@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../services/api_service.dart';
-import 'classification_preview_dialog.dart';
+import '../services/task_classifier.dart';
+import 'auto_suggestion_chips.dart';
 
 class TaskFormBottomSheet extends StatefulWidget {
   final Task? task;
@@ -65,72 +65,47 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       return;
     }
 
-    // For new tasks, show auto-classification preview
-    if (widget.task == null) {
-      await _showClassificationPreview();
-    } else {
-      // For editing, submit directly
-      await _createOrUpdateTask();
-    }
-  }
-
-  Future<void> _showClassificationPreview() async {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
-    );
-
-    try {
-      final apiService = context.read<ApiService>();
-      final classification = await apiService.getAutoClassification(
-        title: _titleController.text,
-        description: _descriptionController.text,
-      );
-
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close loading
-
-      // Show preview dialog
-      if (!context.mounted) return;
-      await showDialog(
-        context: context,
-        builder: (context) => ClassificationPreviewDialog(
-          classification: classification,
-          initialCategory: _selectedCategory,
-          initialPriority: _selectedPriority,
-          onConfirm: (category, priority) {
-            setState(() {
-              _selectedCategory = category;
-              _selectedPriority = priority;
-            });
-            // Now create the task
-            _createOrUpdateTask();
-          },
-        ),
-      );
-    } catch (e) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // Close loading
-
-      // If classification fails, proceed with manual selection
-      if (_selectedCategory == null || _selectedPriority == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select category and priority')),
-        );
-        return;
-      }
-      await _createOrUpdateTask();
-    }
+    // Create or update task directly.
+    // Category & priority will be chosen automatically based on keywords.
+    await _createOrUpdateTask();
   }
 
   Future<void> _createOrUpdateTask() async {
-    if (_selectedCategory == null || _selectedPriority == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select category and priority')),
-      );
-      return;
+    // Combine title and description for classification & entity extraction
+    final combinedText =
+        "${_titleController.text} ${_descriptionController.text}".trim();
+
+    // For new tasks, always use auto-detected category/priority from keywords
+    // For editing, use existing values or auto-detect if not set
+    final finalCategory = widget.task == null
+        ? TaskClassifier.classifyCategory(
+            combinedText,
+          ) // Always auto-detect for new tasks
+        : (_selectedCategory ?? TaskClassifier.classifyCategory(combinedText));
+    final finalPriority = widget.task == null
+        ? TaskClassifier.classifyPriority(
+            combinedText,
+          ) // Always auto-detect for new tasks
+        : (_selectedPriority ?? TaskClassifier.classifyPriority(combinedText));
+
+    // Extract entities and suggested actions (only for new tasks)
+    Map<String, dynamic>? extractedEntities;
+    List<String>? suggestedActions;
+
+    if (widget.task == null) {
+      // Extract entities and actions for new tasks
+      extractedEntities = TaskClassifier.extractEntities(combinedText);
+      if (extractedEntities.isEmpty) {
+        extractedEntities = null;
+      }
+      suggestedActions = TaskClassifier.getSuggestedActionsByText(combinedText);
+      if (suggestedActions.isEmpty) {
+        suggestedActions = null;
+      }
+    } else {
+      // For editing, preserve existing entities and actions
+      extractedEntities = widget.task!.extractedEntities;
+      suggestedActions = widget.task!.suggestedActions;
     }
 
     final task = Task(
@@ -140,10 +115,12 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       dueDate: _selectedDueDate,
       assignedTo: _assignedToController.text,
       status: widget.task?.status ?? TaskStatus.pending,
-      category: _selectedCategory!,
-      priority: _selectedPriority!,
+      category: finalCategory,
+      priority: finalPriority,
       createdAt: widget.task?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
+      extractedEntities: extractedEntities,
+      suggestedActions: suggestedActions,
     );
 
     final taskProvider = context.read<TaskProvider>();
@@ -201,6 +178,7 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                     labelText: 'Title *',
                     border: OutlineInputBorder(),
                   ),
+                  onChanged: (_) => setState(() {}),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a title';
@@ -216,6 +194,7 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                     border: OutlineInputBorder(),
                   ),
                   maxLines: 4,
+                  onChanged: (_) => setState(() {}),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter a description';
@@ -224,6 +203,18 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
+                // Live auto-suggestions based on title & description (only for new tasks)
+                if (widget.task == null &&
+                    (_titleController.text.isNotEmpty ||
+                        _descriptionController.text.isNotEmpty))
+                  AutoSuggestionChips(
+                    title: _titleController.text,
+                    description: _descriptionController.text,
+                  ),
+                if (widget.task == null &&
+                    (_titleController.text.isNotEmpty ||
+                        _descriptionController.text.isNotEmpty))
+                  const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: _selectDate,
                   icon: const Icon(Icons.calendar_today),
@@ -240,44 +231,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                     labelText: 'Assigned To',
                     border: OutlineInputBorder(),
                   ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<TaskCategory>(
-                  value: _selectedCategory,
-                  decoration: const InputDecoration(
-                    labelText: 'Category *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: TaskCategory.values.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category.value),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedCategory = value;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<TaskPriority>(
-                  value: _selectedPriority,
-                  decoration: const InputDecoration(
-                    labelText: 'Priority *',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: TaskPriority.values.map((priority) {
-                    return DropdownMenuItem(
-                      value: priority,
-                      child: Text(priority.value),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedPriority = value;
-                    });
-                  },
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(

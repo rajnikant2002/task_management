@@ -125,11 +125,23 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
+      // Validate ID
+      if (id.isEmpty) {
+        throw Exception('Cannot delete task: Invalid task ID');
+      }
+
+      // Try to delete from API first
       await _apiService.deleteTask(id);
+
+      // If successful, remove from local list (whether it exists locally or not)
       _tasks.removeWhere((t) => t.id == id);
       _applyFilters();
     } catch (e) {
-      _error = e.toString();
+      String errorMessage = e.toString();
+      if (errorMessage.contains('Exception: ')) {
+        errorMessage = errorMessage.replaceFirst('Exception: ', '');
+      }
+      _error = errorMessage;
       rethrow;
     } finally {
       _isLoading = false;

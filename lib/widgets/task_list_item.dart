@@ -40,7 +40,7 @@ class TaskListItem extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                _CategoryChip(category: task.category),
+                _CategoryChip(task: task),
                 const SizedBox(width: 8),
                 _PriorityBadge(priority: task.priority),
               ],
@@ -116,18 +116,21 @@ class TaskListItem extends StatelessWidget {
 }
 
 class _CategoryChip extends StatelessWidget {
-  final TaskCategory category;
+  final Task task;
 
-  const _CategoryChip({required this.category});
+  const _CategoryChip({required this.task});
 
   @override
   Widget build(BuildContext context) {
+    // Use detected category name if available, otherwise use enum value
+    final categoryName = task.getDisplayCategoryName();
+    
     return Chip(
       label: Text(
-        category.value,
+        categoryName,
         style: const TextStyle(fontSize: 11, color: Colors.white),
       ),
-      backgroundColor: TaskCategory.getColor(category),
+      backgroundColor: TaskCategory.getColor(task.category),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,

@@ -338,7 +338,7 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   children: [
                     Chip(
                       avatar: const Icon(Icons.category, size: 16),
-                      label: Text(currentTask.category.value),
+                      label: Text(currentTask.getDisplayCategoryName()),
                     ),
                     Chip(
                       avatar: const Icon(Icons.flag, size: 16),

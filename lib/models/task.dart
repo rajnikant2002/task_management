@@ -81,7 +81,9 @@ class Task {
           json['category']?.toString() ?? 'Other',
         ),
         priority: TaskPriority.fromString(
-          json['priority']?.toString() ?? 'Medium',
+          json['priority']?.toString() ?? 
+          json['task_priority']?.toString() ?? 
+          'Medium',
         ),
         createdAt:
             DateTime.tryParse(
@@ -93,12 +95,28 @@ class Task {
               (json['updatedAt'] ?? json['updated_at'] ?? '').toString(),
             ) ??
             DateTime.now(),
-        extractedEntities:
-            json['extractedEntities'] != null ||
-                json['extracted_entities'] != null
-            ? (json['extractedEntities'] ?? json['extracted_entities'])
-                  as Map<String, dynamic>?
-            : null,
+        // Preserve detected category name from backend if it's a descriptive name
+        extractedEntities: () {
+          final categoryFromBackend = json['category']?.toString() ?? '';
+          final descriptiveCategories = ['Scheduling', 'Finance', 'Technical', 'Safety', 'General'];
+          
+          // Get existing extractedEntities or create new map
+          Map<String, dynamic>? entities;
+          if (json['extractedEntities'] != null || json['extracted_entities'] != null) {
+            entities = Map<String, dynamic>.from(
+              json['extractedEntities'] ?? json['extracted_entities'] ?? {},
+            );
+          } else {
+            entities = <String, dynamic>{};
+          }
+          
+          // If backend sent a descriptive category name, preserve it
+          if (descriptiveCategories.contains(categoryFromBackend)) {
+            entities['detected_category'] = categoryFromBackend;
+          }
+          
+          return entities.isEmpty ? null : entities;
+        }(),
         suggestedActions:
             json['suggestedActions'] != null ||
                 json['suggested_actions'] != null
@@ -114,7 +132,26 @@ class Task {
     }
   }
 
+  // Get the display category name (Scheduling, Finance, Technical, Safety, General)
+  // Uses detected_category from extractedEntities if available, otherwise uses category enum value
+  String getDisplayCategoryName() {
+    if (extractedEntities != null && 
+        extractedEntities!.containsKey('detected_category')) {
+      return extractedEntities!['detected_category'] as String;
+    }
+    // If category is from backend and is a descriptive name, return it
+    // Otherwise return enum value
+    return category.value;
+  }
+
   Map<String, dynamic> toJson() {
+    // Use detected category name from extractedEntities if available, otherwise use enum value
+    String categoryValue = category.value;
+    if (extractedEntities != null && 
+        extractedEntities!.containsKey('detected_category')) {
+      categoryValue = extractedEntities!['detected_category'] as String;
+    }
+    
     return {
       'id': id,
       'title': title,
@@ -126,8 +163,9 @@ class Task {
       'assigned_to': assignedTo,
       'status': status.value,
       'task_status': status.value,
-      'category': category.value,
+      'category': categoryValue, // Use detected category name (Scheduling, Finance, etc.)
       'priority': priority.value,
+      'task_priority': priority.value, // Also send snake_case for backend compatibility
       'createdAt': createdAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -228,10 +266,30 @@ enum TaskCategory {
   const TaskCategory(this.value);
 
   static TaskCategory fromString(String value) {
-    return TaskCategory.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => TaskCategory.other,
-    );
+    final normalized = value.trim();
+    
+    // First try exact match with enum values
+    for (final category in TaskCategory.values) {
+      if (category.value.toLowerCase() == normalized.toLowerCase()) {
+        return category;
+      }
+    }
+    
+    // Handle descriptive category names (Scheduling, Finance, Technical, Safety, General)
+    // Map them to appropriate enum values
+    final lowerValue = normalized.toLowerCase();
+    switch (lowerValue) {
+      case 'scheduling':
+      case 'finance':
+      case 'technical':
+        return TaskCategory.work; // All map to Work
+      case 'safety':
+        return TaskCategory.health; // Safety maps to Health
+      case 'general':
+        return TaskCategory.other; // General maps to Other
+      default:
+        return TaskCategory.other;
+    }
   }
 
   static Color getColor(TaskCategory category) {
@@ -259,6 +317,10 @@ enum TaskPriority {
   const TaskPriority(this.value);
 
   static TaskPriority fromString(String value) {
+    if (value.isEmpty || value.trim().isEmpty) {
+      return TaskPriority.medium;
+    }
+    
     final normalized = value.trim().toLowerCase();
 
     // First try to match display values like "Low", "Medium", "High" ignoring case
@@ -268,13 +330,22 @@ enum TaskPriority {
       }
     }
 
-    // Fallback for common raw backend values like "low", "medium", "high"
+    // Handle common variations and raw backend values
     switch (normalized) {
       case 'low':
+      case '1':
+      case 'lowest':
         return TaskPriority.low;
       case 'high':
+      case '3':
+      case 'highest':
+      case 'urgent':
+      case 'critical':
         return TaskPriority.high;
       case 'medium':
+      case '2':
+      case 'normal':
+      case 'moderate':
       default:
         return TaskPriority.medium;
     }

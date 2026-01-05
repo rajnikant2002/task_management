@@ -54,20 +54,31 @@ class ClassificationPreviewDialog extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 16),
-                  _ClassificationItem(
-                    label: 'Category',
-                    value: initialCategory != null
-                        ? initialCategory!.value
-                        : classification.category.value,
-                    color: TaskCategory.getColor(selectedCategory),
-                    canOverride: true,
-                    currentValue: selectedCategory.value,
-                    options: TaskCategory.values,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedCategory = value as TaskCategory;
-                      });
-                    },
+                  // Category - display only (no override)
+                  Row(
+                    children: [
+                      const Text(
+                        'Category: ',
+                        style: TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: TaskCategory.getColor(selectedCategory).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(
+                            color: TaskCategory.getColor(selectedCategory),
+                          ),
+                        ),
+                        child: Text(
+                          selectedCategory.value,
+                          style: TextStyle(
+                            color: TaskCategory.getColor(selectedCategory),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   _ClassificationItem(
