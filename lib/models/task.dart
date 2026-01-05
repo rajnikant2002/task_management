@@ -13,7 +13,8 @@ class Task {
   final DateTime updatedAt;
   final Map<String, dynamic>? extractedEntities;
   final List<String>? suggestedActions;
-  final String? backendCategoryName; // Store original backend category name (scheduling, finance, etc.)
+  final String?
+  backendCategoryName; // Store original backend category name (scheduling, finance, etc.)
 
   Task({
     required this.id,
@@ -88,15 +89,21 @@ class Task {
         backendCategoryName: () {
           final catStr = (json['category']?.toString() ?? '').toLowerCase();
           // Only store if it's one of the 5 backend categories
-          if (['scheduling', 'finance', 'technical', 'safety', 'general'].contains(catStr)) {
+          if ([
+            'scheduling',
+            'finance',
+            'technical',
+            'safety',
+            'general',
+          ].contains(catStr)) {
             return catStr;
           }
           return null;
         }(),
         priority: TaskPriority.fromString(
-          json['priority']?.toString() ?? 
-          json['task_priority']?.toString() ?? 
-          'Medium',
+          json['priority']?.toString() ??
+              json['task_priority']?.toString() ??
+              'Medium',
         ),
         createdAt:
             DateTime.tryParse(
@@ -110,11 +117,12 @@ class Task {
             DateTime.now(),
         // Use extractedEntities directly from backend - no client-side modifications
         extractedEntities:
-            json['extractedEntities'] != null || json['extracted_entities'] != null
-                ? Map<String, dynamic>.from(
-                    json['extractedEntities'] ?? json['extracted_entities'] ?? {},
-                  )
-                : null,
+            json['extractedEntities'] != null ||
+                json['extracted_entities'] != null
+            ? Map<String, dynamic>.from(
+                json['extractedEntities'] ?? json['extracted_entities'] ?? {},
+              )
+            : null,
         suggestedActions:
             json['suggestedActions'] != null ||
                 json['suggested_actions'] != null
@@ -137,17 +145,16 @@ class Task {
     if (backendCategoryName != null) {
       return backendCategoryName!;
     }
-    
+
     // Fallback: if backend didn't send category name, default to general
     return 'general';
   }
 
   Map<String, dynamic> toJson() {
-    // Use backend category name if available, otherwise use enum value
     // Backend expects: scheduling, finance, technical, safety, general
-    final categoryValue = backendCategoryName ?? category.value;
-    
-    return {
+    // NEVER send enum values like "Work", "Personal", etc.
+    // Only send category if we have the actual backend category name
+    final json = <String, dynamic>{
       'id': id,
       'title': title,
       'description': description,
@@ -158,9 +165,9 @@ class Task {
       'assigned_to': assignedTo,
       'status': status.value,
       'task_status': status.value,
-      'category': categoryValue, // Use backend category name directly
       'priority': priority.value,
-      'task_priority': priority.value, // Also send snake_case for backend compatibility
+      'task_priority':
+          priority.value, // Also send snake_case for backend compatibility
       'createdAt': createdAt.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -170,6 +177,16 @@ class Task {
       if (suggestedActions != null) 'suggestedActions': suggestedActions,
       if (suggestedActions != null) 'suggested_actions': suggestedActions,
     };
+
+    // Only send category if we have the backend category name
+    // If backendCategoryName is null, don't send category - let backend keep existing value
+    if (backendCategoryName != null) {
+      json['category'] = backendCategoryName;
+    }
+    // If backendCategoryName is null, we don't include 'category' in the JSON
+    // This lets the backend keep the existing category value
+
+    return json;
   }
 }
 
@@ -224,14 +241,14 @@ enum TaskCategory {
 
   static TaskCategory fromString(String value) {
     final normalized = value.trim();
-    
+
     // First try exact match with enum values
     for (final category in TaskCategory.values) {
       if (category.value.toLowerCase() == normalized.toLowerCase()) {
         return category;
       }
     }
-    
+
     // Handle descriptive category names (Scheduling, Finance, Technical, Safety, General)
     // Map them to appropriate enum values
     final lowerValue = normalized.toLowerCase();
@@ -277,7 +294,7 @@ enum TaskPriority {
     if (value.isEmpty || value.trim().isEmpty) {
       return TaskPriority.medium;
     }
-    
+
     final normalized = value.trim().toLowerCase();
 
     // First try to match display values like "Low", "Medium", "High" ignoring case
