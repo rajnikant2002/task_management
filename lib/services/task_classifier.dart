@@ -260,7 +260,8 @@ class TaskClassifier {
     // Extract action verbs
     final actions = _extractActionVerbs(text);
     if (actions.isNotEmpty) {
-      entities['actions'] = actions;
+      // Use `action_verbs` key to align with backend naming
+      entities['action_verbs'] = actions;
     }
 
     return entities;
@@ -325,25 +326,37 @@ class TaskClassifier {
   static List<String> _extractPersonNames(String text) {
     final persons = <String>[];
 
-    // Patterns: "with John", "with John Doe", "by Jane", "assign to Bob", "assigned to Alice"
-    // Also handle: "meeting with John", "call with Jane Smith"
+    // NOTE:
+    //  - We cannot rely on capitalization because users often type names in lowercase
+    //  - We only care about *position* (after with/by/assign to/for), per assessment
+    //  - So we capture the next 1–3 words after those keywords
+    //
+    // Examples we want to catch:
+    //   "meeting with abhimanu"
+    //   "call with john doe tomorrow"
+    //   "report prepared by raj"
+    //   "assign to team lead"
+    //   "assigned to john smith"
     final patterns = [
-      // "with [Name]" - can be preceded by words like "meeting", "call", etc.
+      // "with <name words>"
       RegExp(
-        r'\bwith\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b',
-        caseSensitive: true,
+        r'\bwith\s+([a-zA-Z][a-zA-Z]+(?:\s+[a-zA-Z][a-zA-Z]+){0,2})\b',
+        caseSensitive: false,
       ),
-      // "by [Name]" - can be preceded by words like "done", "created", etc.
-      RegExp(r'\bby\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b', caseSensitive: true),
-      // "assign to [Name]" or "assigned to [Name]"
+      // "by <name words>"
       RegExp(
-        r'\bassign(?:ed)?\s+to\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b',
-        caseSensitive: true,
+        r'\bby\s+([a-zA-Z][a-zA-Z]+(?:\s+[a-zA-Z][a-zA-Z]+){0,2})\b',
+        caseSensitive: false,
       ),
-      // "for [Name]" - sometimes used for assignment
+      // "assign to <name words>" or "assigned to <name words>"
       RegExp(
-        r'\bfor\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\b',
-        caseSensitive: true,
+        r'\bassign(?:ed)?\s+to\s+([a-zA-Z][a-zA-Z]+(?:\s+[a-zA-Z][a-zA-Z]+){0,2})\b',
+        caseSensitive: false,
+      ),
+      // "for <name words>" - sometimes used for assignment
+      RegExp(
+        r'\bfor\s+([a-zA-Z][a-zA-Z]+(?:\s+[a-zA-Z][a-zA-Z]+){0,2})\b',
+        caseSensitive: false,
       ),
     ];
 
@@ -413,22 +426,20 @@ class TaskClassifier {
   static List<String> _extractLocations(String text) {
     final locations = <String>[];
 
-    // Common location indicators and patterns
+    // Common location indicators and patterns.
+    // Similar to names, we cannot rely on capitalization – users might type "in meeting room"
+    // or "at office 2" in lowercase.
     final locationPatterns = [
-      // "at [Location]", "in [Location]", "on [Location]"
+      // "at <location words>", "in <location words>", "on <location words>"
+      // Capture up to 4 words after the preposition, stopping before punctuation.
       RegExp(
-        r'\b(at|in|on)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*(?:\s+(?:Room|Office|Building|Hall|Center|Centre|Place|Street|Avenue|Road))?)\b',
-        caseSensitive: true,
-      ),
-      // "room [Number/Name]", "office [Number/Name]"
-      RegExp(
-        r'\b(room|office|building|location|venue|hall|center|centre)\s+([A-Z0-9][A-Za-z0-9\s]+)\b',
+        r'\b(at|in|on)\s+([a-zA-Z0-9][a-zA-Z0-9]*(?:\s+[a-zA-Z0-9][a-zA-Z0-9]*){0,3})\b',
         caseSensitive: false,
       ),
-      // Standalone location names (capitalized, multiple words)
+      // "room <Number/Name>", "office <Number/Name>", "building <Name>", "location <Name>"
       RegExp(
-        r'\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})\s+(?:Room|Office|Building|Hall|Center|Centre|Place|Street|Avenue|Road)\b',
-        caseSensitive: true,
+        r'\b(room|office|building|location|venue|hall|center|centre)\s+([a-zA-Z0-9][a-zA-Z0-9\s]+)\b',
+        caseSensitive: false,
       ),
     ];
 

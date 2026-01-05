@@ -377,15 +377,17 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: currentTask.extractedEntities!.entries.map((
-                      entry,
-                    ) {
-                      return Chip(
-                        avatar: const Icon(Icons.label_outline, size: 16),
-                        label: Text('${entry.key}: ${entry.value}'),
-                        backgroundColor: Colors.blue.shade50,
-                      );
-                    }).toList(),
+                    children: currentTask.extractedEntities!.entries
+                        // Hide internal helper keys like detected_category from UI
+                        .where((entry) => entry.key != 'detected_category')
+                        .map((entry) {
+                          return Chip(
+                            avatar: const Icon(Icons.label_outline, size: 16),
+                            label: Text('${entry.key}: ${entry.value}'),
+                            backgroundColor: Colors.blue.shade50,
+                          );
+                        })
+                        .toList(),
                   ),
                 ],
                 if (currentTask.suggestedActions != null &&

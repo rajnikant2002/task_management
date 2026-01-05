@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 
 class ClassificationPreviewDialog extends StatelessWidget {
-  final TaskClassification classification;
+  final Task task;
   final TaskCategory? initialCategory;
   final TaskPriority? initialPriority;
   final Function(TaskCategory, TaskPriority) onConfirm;
 
   const ClassificationPreviewDialog({
     super.key,
-    required this.classification,
+    required this.task,
     this.initialCategory,
     this.initialPriority,
     required this.onConfirm,
@@ -18,8 +18,11 @@ class ClassificationPreviewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Use user's selection if available, otherwise use auto-detected
-    TaskCategory selectedCategory = initialCategory ?? classification.category;
-    TaskPriority selectedPriority = initialPriority ?? classification.priority;
+    TaskCategory selectedCategory = initialCategory ?? task.category;
+    TaskPriority selectedPriority = initialPriority ?? task.priority;
+
+    // Get detected category name (e.g., "Scheduling") instead of enum value
+    final detectedCategoryName = task.getDisplayCategoryName();
 
     return StatefulBuilder(
       builder: (context, setState) {
@@ -54,38 +57,28 @@ class ClassificationPreviewDialog extends StatelessWidget {
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 16),
-                  // Category - display only (no override)
-                  Row(
-                    children: [
-                      const Text(
-                        'Category: ',
-                        style: TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: TaskCategory.getColor(selectedCategory).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: TaskCategory.getColor(selectedCategory),
-                          ),
-                        ),
-                        child: Text(
-                          selectedCategory.value,
-                          style: TextStyle(
-                            color: TaskCategory.getColor(selectedCategory),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Category - with override
+                  _ClassificationItem(
+                    label: 'Category',
+                    value: initialCategory != null
+                        ? initialCategory!.value
+                        : detectedCategoryName,
+                    color: TaskCategory.getColor(selectedCategory),
+                    canOverride: true,
+                    currentValue: selectedCategory.value,
+                    options: TaskCategory.values,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCategory = value as TaskCategory;
+                      });
+                    },
                   ),
                   const SizedBox(height: 12),
                   _ClassificationItem(
                     label: 'Priority',
                     value: initialPriority != null
                         ? initialPriority!.value
-                        : classification.priority.value,
+                        : task.priority.value,
                     color: TaskPriority.getColor(selectedPriority),
                     canOverride: true,
                     currentValue: selectedPriority.value,
@@ -96,8 +89,8 @@ class ClassificationPreviewDialog extends StatelessWidget {
                       });
                     },
                   ),
-                  if (classification.extractedEntities != null &&
-                      classification.extractedEntities!.isNotEmpty) ...[
+                  if (task.extractedEntities != null &&
+                      task.extractedEntities!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     const Divider(),
                     const SizedBox(height: 8),
@@ -109,18 +102,23 @@ class ClassificationPreviewDialog extends StatelessWidget {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: classification.extractedEntities!.entries.map((
-                        entry,
-                      ) {
+                      children: task.extractedEntities!.entries.map((entry) {
+                        // Format the value nicely
+                        String displayValue;
+                        if (entry.value is List) {
+                          displayValue = (entry.value as List).join(', ');
+                        } else {
+                          displayValue = entry.value.toString();
+                        }
                         return Chip(
-                          label: Text('${entry.key}: ${entry.value}'),
+                          label: Text('${entry.key}: $displayValue'),
                           backgroundColor: Colors.blue.shade50,
                         );
                       }).toList(),
                     ),
                   ],
-                  if (classification.suggestedActions != null &&
-                      classification.suggestedActions!.isNotEmpty) ...[
+                  if (task.suggestedActions != null &&
+                      task.suggestedActions!.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     const Divider(),
                     const SizedBox(height: 8),
@@ -129,7 +127,7 @@ class ClassificationPreviewDialog extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 8),
-                    ...classification.suggestedActions!.map(
+                    ...task.suggestedActions!.map(
                       (action) => Padding(
                         padding: const EdgeInsets.only(bottom: 4),
                         child: Row(

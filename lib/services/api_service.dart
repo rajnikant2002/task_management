@@ -10,8 +10,8 @@ class ApiService {
     : baseUrl =
           baseUrl ??
           (Platform.isAndroid
-              ? 'https://smart-task-backend-4ut3.onrender.com/api' // Android emulator uses 10.0.2.2 to access host machine
-              : 'https://smart-task-backend-4ut3.onrender.com/api') {
+              ? 'http://10.0.2.2:3000/api' // Android emulator uses 10.0.2.2 to access host machine's localhost
+              : 'http://localhost:3000/api') {
     // Debug: Print the base URL being used
     print('🔗 API Base URL: $baseUrl');
     print('📱 Platform: ${Platform.operatingSystem}');
@@ -23,7 +23,7 @@ class ApiService {
         receiveTimeout: const Duration(
           seconds: 60,
         ), // Increased for slow database queries
-       // sendTimeout: const Duration(seconds: 30),
+        // sendTimeout: const Duration(seconds: 30),
       ),
     );
 
@@ -142,6 +142,68 @@ class ApiService {
     }
   }
 
+  /// Create task with only raw user input (no classification)
+  /// Backend will handle all classification logic
+  Future<Task> createTaskRaw(Map<String, dynamic> rawData) async {
+    try {
+      // Send only user input: title, description, due_date, assigned_to
+      // NO category, priority, extractedEntities, suggestedActions
+      final response = await _dio.post('/tasks', data: rawData);
+      final serverTask = Task.fromJson(response.data['data'] ?? response.data);
+      return serverTask; // Use server's response directly (backend did classification)
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 503) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              e.response?.data?['error'] ??
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to create task: ${e.toString()}');
+    }
+  }
+
+  /// Update task with category/priority override
+  Future<Task> updateTaskOverride(
+    String taskId, {
+    required TaskCategory category,
+    required TaskPriority priority,
+  }) async {
+    try {
+      final response = await _dio.patch(
+        '/tasks/$taskId',
+        data: {'category': category.value, 'priority': priority.value},
+      );
+      final serverTask = Task.fromJson(response.data['data'] ?? response.data);
+      return serverTask;
+    } catch (e) {
+      if (e is DioException) {
+        if (e.response?.statusCode == 503) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.response != null) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              e.response?.data?['error'] ??
+              'Server error (${e.response!.statusCode})';
+          throw Exception(errorMessage);
+        }
+      }
+      throw Exception('Failed to update task override: ${e.toString()}');
+    }
+  }
+
   Future<Task> updateTask(Task task) async {
     try {
       // Backend uses PATCH /api/tasks/{id}
@@ -174,6 +236,8 @@ class ApiService {
   Task _mergeWithLocal(Task server, Task local) {
     // Some backends omit optional fields in the response; keep local values when missing.
     // Always use server's ID if available (backend generates the real ID)
+    // For extractedEntities/suggestedActions: Always use what we sent (local),
+    // because we generate them client-side and backend may return empty/incomplete data
     return local.copyWith(
       id: server.id.isNotEmpty ? server.id : local.id,
       title: server.title.isNotEmpty ? server.title : local.title,
@@ -189,9 +253,9 @@ class ApiService {
       priority: server.priority,
       createdAt: server.createdAt,
       updatedAt: server.updatedAt,
-      // Preserve local extractedEntities and suggestedActions if server doesn't provide them
-      extractedEntities: server.extractedEntities ?? local.extractedEntities,
-      suggestedActions: server.suggestedActions ?? local.suggestedActions,
+      // Always use what we sent - we generate extractedEntities client-side
+      extractedEntities: local.extractedEntities,
+      suggestedActions: local.suggestedActions,
     );
   }
 
@@ -201,7 +265,7 @@ class ApiService {
       if (id.isEmpty) {
         throw Exception('Cannot delete task: Invalid task ID');
       }
-      
+
       // URL encode the ID to handle special characters
       final encodedId = Uri.encodeComponent(id);
       print('🗑️ Attempting to delete task with ID: $id (encoded: $encodedId)');
@@ -210,7 +274,8 @@ class ApiService {
     } catch (e) {
       if (e is DioException) {
         if (e.response?.statusCode == 404) {
-          final errorMessage = e.response?.data?['message'] ?? 
+          final errorMessage =
+              e.response?.data?['message'] ??
               'Task not found (ID: $id). It may have already been deleted.';
           throw Exception(errorMessage);
         }

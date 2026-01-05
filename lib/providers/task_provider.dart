@@ -98,6 +98,56 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  /// Create task with raw user input only (backend handles classification)
+  Future<Task> createTaskRaw(Map<String, dynamic> rawData) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final newTask = await _apiService.createTaskRaw(rawData);
+      _tasks.add(newTask);
+      _applyFilters();
+      return newTask;
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// Update task with category/priority override
+  Future<void> updateTaskWithOverride(
+    String taskId, {
+    required TaskCategory category,
+    required TaskPriority priority,
+  }) async {
+    _isLoading = true;
+    _error = null;
+    notifyListeners();
+
+    try {
+      final updatedTask = await _apiService.updateTaskOverride(
+        taskId,
+        category: category,
+        priority: priority,
+      );
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+        _applyFilters();
+      }
+    } catch (e) {
+      _error = e.toString();
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> updateTask(Task task) async {
     _isLoading = true;
     _error = null;

@@ -3,8 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../services/task_classifier.dart';
-import 'auto_suggestion_chips.dart';
+import 'classification_preview_dialog.dart';
 
 class TaskFormBottomSheet extends StatefulWidget {
   final Task? task;
@@ -22,8 +21,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
   final _assignedToController = TextEditingController();
 
   DateTime? _selectedDueDate;
-  TaskCategory? _selectedCategory;
-  TaskPriority? _selectedPriority;
 
   @override
   void initState() {
@@ -33,8 +30,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       _descriptionController.text = widget.task!.description;
       _assignedToController.text = widget.task!.assignedTo;
       _selectedDueDate = widget.task!.dueDate;
-      _selectedCategory = widget.task!.category;
-      _selectedPriority = widget.task!.priority;
     }
   }
 
@@ -65,83 +60,57 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
       return;
     }
 
-    // Create or update task directly.
-    // Category & priority will be chosen automatically based on keywords.
+    // Create or update task.
+    // For new tasks: Backend will handle all classification automatically.
     await _createOrUpdateTask();
   }
 
   Future<void> _createOrUpdateTask() async {
-    // Combine title and description for classification & entity extraction
-    final combinedText =
-        "${_titleController.text} ${_descriptionController.text}".trim();
-
-    // For new tasks, always use auto-detected category/priority from keywords
-    // For editing, use existing values or auto-detect if not set
-    final finalCategory = widget.task == null
-        ? TaskClassifier.classifyCategory(
-            combinedText,
-          ) // Always auto-detect for new tasks
-        : (_selectedCategory ?? TaskClassifier.classifyCategory(combinedText));
-    final finalPriority = widget.task == null
-        ? TaskClassifier.classifyPriority(
-            combinedText,
-          ) // Always auto-detect for new tasks
-        : (_selectedPriority ?? TaskClassifier.classifyPriority(combinedText));
-
-    // Extract entities and suggested actions (only for new tasks)
-    Map<String, dynamic>? extractedEntities;
-    List<String>? suggestedActions;
-
-    if (widget.task == null) {
-      // Extract entities and actions for new tasks
-      extractedEntities = TaskClassifier.extractEntities(combinedText);
-      if (extractedEntities.isEmpty) {
-        extractedEntities = null;
-      }
-      suggestedActions = TaskClassifier.getSuggestedActionsByText(combinedText);
-      if (suggestedActions.isEmpty) {
-        suggestedActions = null;
-      }
-    } else {
-      // For editing, preserve existing entities and actions
-      extractedEntities = widget.task!.extractedEntities;
-      suggestedActions = widget.task!.suggestedActions;
-    }
-
-    final task = Task(
-      id: widget.task?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
-      title: _titleController.text,
-      description: _descriptionController.text,
-      dueDate: _selectedDueDate,
-      assignedTo: _assignedToController.text,
-      status: widget.task?.status ?? TaskStatus.pending,
-      category: finalCategory,
-      priority: finalPriority,
-      createdAt: widget.task?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-      extractedEntities: extractedEntities,
-      suggestedActions: suggestedActions,
-    );
-
     final taskProvider = context.read<TaskProvider>();
+
     try {
       if (widget.task == null) {
-        await taskProvider.createTask(task);
+        // NEW TASK: Send only raw user input to backend
+        // Backend will handle all classification
+        final rawTaskData = {
+          'title': _titleController.text.trim(),
+          'description': _descriptionController.text.trim(),
+          if (_selectedDueDate != null)
+            'due_date': _selectedDueDate!.toIso8601String(),
+          'assigned_to': _assignedToController.text.trim(),
+        };
+
+        // Call backend to create task with raw input
+        final createdTask = await taskProvider.createTaskRaw(rawTaskData);
+
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Task created successfully')),
-          );
+          // Show preview dialog with auto-generated classification
+          await _showClassificationPreview(createdTask, taskProvider);
         }
       } else {
+        // EDITING EXISTING TASK: Use existing logic
+        final task = Task(
+          id: widget.task!.id,
+          title: _titleController.text,
+          description: _descriptionController.text,
+          dueDate: _selectedDueDate,
+          assignedTo: _assignedToController.text,
+          status: widget.task!.status,
+          category: widget.task!.category,
+          priority: widget.task!.priority,
+          createdAt: widget.task!.createdAt,
+          updatedAt: DateTime.now(),
+          extractedEntities: widget.task!.extractedEntities,
+          suggestedActions: widget.task!.suggestedActions,
+        );
+
         await taskProvider.updateTask(task);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Task updated successfully')),
           );
+          Navigator.of(context).pop();
         }
-      }
-      if (context.mounted) {
-        Navigator.of(context).pop();
       }
     } catch (e) {
       if (context.mounted) {
@@ -149,6 +118,54 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
           context,
         ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
       }
+    }
+  }
+
+  Future<void> _showClassificationPreview(
+    Task task,
+    TaskProvider taskProvider,
+  ) async {
+    // Show preview dialog with task from backend
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => ClassificationPreviewDialog(
+        task: task,
+        onConfirm: (category, priority) async {
+          // Check if user overrode category or priority
+          final hasOverride =
+              category != task.category || priority != task.priority;
+
+          if (hasOverride) {
+            // Send override to backend
+            try {
+              await taskProvider.updateTaskWithOverride(
+                task.id,
+                category: category,
+                priority: priority,
+              );
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error updating override: ${e.toString()}'),
+                  ),
+                );
+              }
+              return;
+            }
+          }
+
+          // Close preview dialog
+          Navigator.of(context).pop(true);
+        },
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Task created successfully')),
+      );
+      Navigator.of(context).pop(); // Close bottom sheet
     }
   }
 
@@ -203,18 +220,6 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                // Live auto-suggestions based on title & description (only for new tasks)
-                if (widget.task == null &&
-                    (_titleController.text.isNotEmpty ||
-                        _descriptionController.text.isNotEmpty))
-                  AutoSuggestionChips(
-                    title: _titleController.text,
-                    description: _descriptionController.text,
-                  ),
-                if (widget.task == null &&
-                    (_titleController.text.isNotEmpty ||
-                        _descriptionController.text.isNotEmpty))
-                  const SizedBox(height: 16),
                 OutlinedButton.icon(
                   onPressed: _selectDate,
                   icon: const Icon(Icons.calendar_today),
