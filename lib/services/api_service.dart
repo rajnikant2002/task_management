@@ -117,31 +117,6 @@ class ApiService {
     }
   }
 
-  Future<Task> createTask(Task task) async {
-    try {
-      final response = await _dio.post('/tasks', data: task.toJson());
-      final serverTask = Task.fromJson(response.data['data'] ?? response.data);
-      return _mergeWithLocal(serverTask, task);
-    } catch (e) {
-      if (e is DioException) {
-        if (e.response?.statusCode == 503) {
-          final errorMessage =
-              e.response?.data?['message'] ??
-              'Service temporarily unavailable. Database connection issue.';
-          throw Exception(errorMessage);
-        }
-        if (e.response != null) {
-          final errorMessage =
-              e.response?.data?['message'] ??
-              e.response?.data?['error'] ??
-              'Server error (${e.response!.statusCode})';
-          throw Exception(errorMessage);
-        }
-      }
-      throw Exception('Failed to create task: ${e.toString()}');
-    }
-  }
-
   /// Create task with only raw user input (no classification)
   /// Backend will handle all classification logic
   Future<Task> createTaskRaw(Map<String, dynamic> rawData) async {
@@ -239,10 +214,8 @@ class ApiService {
   }
 
   Task _mergeWithLocal(Task server, Task local) {
-    // Some backends omit optional fields in the response; keep local values when missing.
-    // Always use server's ID if available (backend generates the real ID)
-    // For extractedEntities/suggestedActions: Always use what we sent (local),
-    // because we generate them client-side and backend may return empty/incomplete data
+    // Backend now handles all classification and generates extractedEntities/suggestedActions
+    // Always use server's data as it's the source of truth
     return local.copyWith(
       id: server.id.isNotEmpty ? server.id : local.id,
       title: server.title.isNotEmpty ? server.title : local.title,
@@ -258,9 +231,9 @@ class ApiService {
       priority: server.priority,
       createdAt: server.createdAt,
       updatedAt: server.updatedAt,
-      // Always use what we sent - we generate extractedEntities client-side
-      extractedEntities: local.extractedEntities,
-      suggestedActions: local.suggestedActions,
+      // Use server's extractedEntities and suggestedActions (backend generates them)
+      extractedEntities: server.extractedEntities,
+      suggestedActions: server.suggestedActions,
     );
   }
 
@@ -299,33 +272,6 @@ class ApiService {
         }
       }
       throw Exception('Failed to delete task: ${e.toString()}');
-    }
-  }
-
-  // Get auto-classification for a task before creating it
-  Future<TaskClassification> getAutoClassification({
-    required String title,
-    required String description,
-  }) async {
-    try {
-      // Call backend to get auto-classification
-      // This endpoint should analyze the title/description and return classification
-      final response = await _dio.post(
-        '/tasks/classify',
-        data: {'title': title, 'description': description},
-      );
-
-      // Handle response structure
-      final data = response.data['data'] ?? response.data;
-      return TaskClassification.fromJson(data as Map<String, dynamic>);
-    } catch (e) {
-      // If classification endpoint doesn't exist, return defaults
-      // In a real scenario, you might want to handle this differently
-      print('⚠️ Classification endpoint not available, using defaults: $e');
-      return TaskClassification(
-        category: TaskCategory.other,
-        priority: TaskPriority.medium,
-      );
     }
   }
 }

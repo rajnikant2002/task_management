@@ -80,24 +80,6 @@ class TaskProvider with ChangeNotifier {
     await _loadTasks();
   }
 
-  Future<void> createTask(Task task) async {
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-
-    try {
-      final newTask = await _apiService.createTask(task);
-      _tasks.add(newTask);
-      _applyFilters();
-    } catch (e) {
-      _error = e.toString();
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   /// Create task with raw user input only (backend handles classification)
   Future<Task> createTaskRaw(Map<String, dynamic> rawData) async {
     _isLoading = true;
@@ -119,14 +101,15 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Update task with category/priority override
+  /// Note: Doesn't set loading state to avoid blank screen during dialog confirmation
   Future<void> updateTaskWithOverride(
     String taskId, {
     required String categoryName,
     required TaskPriority priority,
   }) async {
-    _isLoading = true;
+    // Don't set loading state - this is called during dialog confirmation
+    // Setting loading would cause blank screen when dialogs close
     _error = null;
-    notifyListeners();
 
     try {
       final updatedTask = await _apiService.updateTaskOverride(
@@ -138,13 +121,12 @@ class TaskProvider with ChangeNotifier {
       if (index != -1) {
         _tasks[index] = updatedTask;
         _applyFilters();
+        notifyListeners(); // Notify after update
       }
     } catch (e) {
       _error = e.toString();
+      notifyListeners(); // Notify even on error
       rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
   }
 

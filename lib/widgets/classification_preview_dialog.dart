@@ -227,14 +227,18 @@ class ClassificationPreviewDialog extends StatelessWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop(false);
+                }
+              },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 // Pass backend category name (e.g., "finance", "scheduling") instead of enum
-                onConfirm(selectedBackendCategory.name, selectedPriority);
-                Navigator.of(context).pop();
+                // Don't pop here - let onConfirm callback handle it
+                await onConfirm(selectedBackendCategory.name, selectedPriority);
               },
               child: const Text('Confirm & Create'),
             ),

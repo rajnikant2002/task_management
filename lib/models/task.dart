@@ -199,44 +199,6 @@ class Task {
   }
 }
 
-// Model for auto-classification preview
-class TaskClassification {
-  final TaskCategory category;
-  final TaskPriority priority;
-  final Map<String, dynamic>? extractedEntities;
-  final List<String>? suggestedActions;
-
-  TaskClassification({
-    required this.category,
-    required this.priority,
-    this.extractedEntities,
-    this.suggestedActions,
-  });
-
-  factory TaskClassification.fromJson(Map<String, dynamic> json) {
-    return TaskClassification(
-      category: TaskCategory.fromString(
-        json['category']?.toString() ?? 'Other',
-      ),
-      priority: TaskPriority.fromString(
-        json['priority']?.toString() ?? 'Medium',
-      ),
-      extractedEntities:
-          json['extractedEntities'] != null ||
-              json['extracted_entities'] != null
-          ? (json['extractedEntities'] ?? json['extracted_entities'])
-                as Map<String, dynamic>?
-          : null,
-      suggestedActions:
-          json['suggestedActions'] != null || json['suggested_actions'] != null
-          ? List<String>.from(
-              json['suggestedActions'] ?? json['suggested_actions'] ?? [],
-            )
-          : null,
-    );
-  }
-}
-
 enum TaskStatus {
   pending('Pending'),
   inProgress('In Progress'),

@@ -156,21 +156,45 @@ class _TaskFormBottomSheetState extends State<TaskFormBottomSheet> {
                   ),
                 );
               }
+              // Don't close dialog on error
               return;
             }
           }
 
-          // Close preview dialog
-          Navigator.of(context).pop(true);
+          // Close preview dialog and return success
+          if (context.mounted && Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(true);
+          }
         },
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task created successfully')),
-      );
-      Navigator.of(context).pop(); // Close bottom sheet
+      // Task is already in the list from createTaskRaw
+      // If override was applied, it's already updated
+      // Just refresh to ensure UI is up to date
+      await taskProvider.refreshTasks();
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Task created successfully')),
+        );
+
+        // Close bottom sheet
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }
+    } else if (confirmed == false && context.mounted) {
+      // User cancelled the preview dialog
+      // Remove the task that was already added to the list
+      try {
+        await taskProvider.deleteTask(task.id);
+      } catch (e) {
+        // Task might not exist or already deleted - that's okay
+        print('Note: Could not remove cancelled task: $e');
+      }
+      // Don't close bottom sheet - let user continue editing or cancel manually
     }
   }
 
