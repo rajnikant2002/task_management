@@ -461,17 +461,32 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: ElevatedButton.icon(
                         onPressed: () {
                           widget.onEdit(currentTask);
                         },
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('Edit Task'),
+                        icon: const Icon(Icons.edit_outlined, size: 20),
+                        label: const Text(
+                          'Edit Task',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: OutlinedButton.icon(
+                      child: ElevatedButton.icon(
                         onPressed: () async {
                           final confirm = await showDialog<bool>(
                             context: context,
@@ -504,8 +519,23 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                             }
                           }
                         },
-                        icon: const Icon(Icons.delete_outline),
-                        label: const Text('Delete'),
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        label: const Text(
+                          'Delete',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 2,
+                        ),
                       ),
                     ),
                   ],
@@ -526,8 +556,23 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                         );
                       }
                     },
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Mark as Completed'),
+                    icon: const Icon(Icons.check_circle, size: 22),
+                    label: const Text(
+                      'Mark as Completed',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 3,
+                    ),
                   ),
               ],
             ),
