@@ -313,9 +313,23 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(
-                        currentTask.title,
-                        style: Theme.of(context).textTheme.titleLarge,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Title:',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            currentTask.title,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ],
                       ),
                     ),
                     IconButton(
@@ -324,10 +338,24 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  currentTask.description,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                const SizedBox(height: 16),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Description:',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currentTask.description,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Wrap(
@@ -336,7 +364,10 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   children: [
                     Chip(
                       avatar: const Icon(Icons.category, size: 16),
-                      label: Text(currentTask.backendCategoryName ?? 'general'),
+                      label: Text(
+                        'Category: ${currentTask.backendCategoryName ?? 'general'}',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
                     ),
                     Chip(
                       avatar: const Icon(Icons.flag, size: 16),
@@ -345,9 +376,7 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                     Chip(
                       avatar: const Icon(Icons.person, size: 16),
                       label: Text(
-                        currentTask.assignedTo.isEmpty
-                            ? 'Unassigned'
-                            : currentTask.assignedTo,
+                        'Assigned to: ${currentTask.assignedTo.isEmpty ? 'Unassigned' : currentTask.assignedTo}',
                       ),
                     ),
                     Chip(
