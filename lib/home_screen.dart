@@ -585,31 +585,33 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            widget.onEdit(currentTask);
-                          },
-                          icon: const Icon(Icons.edit_outlined, size: 20),
-                          label: const Text(
-                            'Edit Task',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                      if (currentTask.status != TaskStatus.completed) ...[
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              widget.onEdit(currentTask);
+                            },
+                            icon: const Icon(Icons.edit_outlined, size: 20),
+                            label: const Text(
+                              'Edit Task',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              elevation: 2,
                             ),
-                            elevation: 2,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
+                        const SizedBox(width: 12),
+                      ],
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () async {

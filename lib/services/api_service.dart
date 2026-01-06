@@ -10,8 +10,8 @@ class ApiService {
     : baseUrl =
           baseUrl ??
           (Platform.isAndroid
-              ? 'http://10.0.2.2:3000/api' // Android emulator uses 10.0.2.2 to access host machine's localhost
-              : 'http://localhost:3000/api') {
+              ? 'https://smart-task-backend-4ut3.onrender.com/api/'
+              : 'https://smart-task-backend-4ut3.onrender.com/api/') {
     // Debug: Print the base URL being used
     print('🔗 API Base URL: $baseUrl');
     print('📱 Platform: ${Platform.operatingSystem}');
@@ -23,7 +23,7 @@ class ApiService {
         receiveTimeout: const Duration(
           seconds: 60,
         ), // Increased for slow database queries
-        // sendTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 30),
       ),
     );
 
