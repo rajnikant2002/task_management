@@ -95,10 +95,10 @@ class TaskProvider with ChangeNotifier {
         priority: _selectedPriority,
         search: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
-      
+
       // Also fetch all tasks for summary counts (without filters)
       _allTasksForCounts = await _apiService.getTasks();
-      
+
       _error = null; // Clear error on success
     } catch (e) {
       // Extract clean error message

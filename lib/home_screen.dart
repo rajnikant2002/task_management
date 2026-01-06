@@ -315,7 +315,7 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
             padding: EdgeInsets.only(
               left: 24,
               right: 24,
-              top: 16 + MediaQuery.of(context).padding.top,
+              top: 50,
               bottom: MediaQuery.of(context).viewInsets.bottom + 24,
             ),
             child: SingleChildScrollView(
@@ -384,322 +384,324 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   ),
                   const SizedBox(height: 16),
                   Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Chip(
-                      avatar: const Icon(Icons.category, size: 16),
-                      label: Text(
-                        'Category: ${currentTask.backendCategoryName ?? 'general'}',
-                        style: const TextStyle(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.flag, size: 16),
-                      label: Text('Priority: ${currentTask.priority.value}'),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.person, size: 16),
-                      label: Text(
-                        'Assigned to: ${currentTask.assignedTo.isEmpty ? 'Unassigned' : currentTask.assignedTo}',
-                      ),
-                    ),
-                    Chip(
-                      avatar: const Icon(Icons.info_outline, size: 16),
-                      label: Text('Status: ${currentTask.status.value}'),
-                    ),
-                    if (currentTask.dueDate != null)
-                      Chip(
-                        avatar: const Icon(Icons.calendar_today, size: 16),
-                        label: Text(
-                          'Due: ${DateFormat('MMM dd, yyyy').format(currentTask.dueDate!)}',
-                        ),
-                      ),
-                  ],
-                ),
-                if (currentTask.extractedEntities != null &&
-                    currentTask.extractedEntities!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const Text(
-                    'Extracted Entities:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: currentTask.extractedEntities!.entries
-                        // Hide internal helper keys like detected_category and locations from UI
-                        .where(
-                          (entry) =>
-                              entry.key != 'detected_category' &&
-                              entry.key != 'locations',
-                        )
-                        .map((entry) {
-                          // Format backend data for display
-                          final displayValue = entry.value is List
-                              ? (entry.value as List)
-                                    .where((item) {
-                                      // Filter out relative date strings
-                                      if (entry.key == 'dates') {
-                                        final str = item
-                                            .toString()
-                                            .toLowerCase();
-                                        const relativeDates = [
-                                          'today',
-                                          'tomorrow',
-                                          'yesterday',
-                                          'next week',
-                                          'this week',
-                                        ];
-                                        if (relativeDates.contains(str)) {
-                                          return false;
-                                        }
-                                      }
-                                      return true;
-                                    })
-                                    .map((item) {
-                                      final str = item.toString();
-                                      // Remove time portion from dates
-                                      return entry.key == 'dates' &&
-                                              str.contains('T')
-                                          ? str.split('T')[0]
-                                          : str;
-                                    })
-                                    .join(', ')
-                              : entry.value.toString();
-
-                          return Chip(
-                            avatar: const Icon(Icons.label_outline, size: 16),
-                            label: Text('${entry.key}: $displayValue'),
-                            backgroundColor: Colors.blue.shade50,
-                          );
-                        })
-                        .toList(),
-                  ),
-                ],
-                if (currentTask.suggestedActions != null &&
-                    currentTask.suggestedActions!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const Text(
-                    'Suggested Actions:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...currentTask.suggestedActions!.map(
-                    (action) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.check_circle_outline,
-                            size: 20,
-                            color: Colors.green,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              action,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                if (currentTask.history != null &&
-                    currentTask.history!.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Divider(),
-                  const Text(
-                    'Task History:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  ...currentTask.history!.map(
-                    (entry) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey.shade300),
+                    children: [
+                      Chip(
+                        avatar: const Icon(Icons.category, size: 16),
+                        label: Text(
+                          'Category: ${currentTask.backendCategoryName ?? 'general'}',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
                         ),
-                        child: Column(
+                      ),
+                      Chip(
+                        avatar: const Icon(Icons.flag, size: 16),
+                        label: Text('Priority: ${currentTask.priority.value}'),
+                      ),
+                      Chip(
+                        avatar: const Icon(Icons.person, size: 16),
+                        label: Text(
+                          'Assigned to: ${currentTask.assignedTo.isEmpty ? 'Unassigned' : currentTask.assignedTo}',
+                        ),
+                      ),
+                      Chip(
+                        avatar: const Icon(Icons.info_outline, size: 16),
+                        label: Text('Status: ${currentTask.status.value}'),
+                      ),
+                      if (currentTask.dueDate != null)
+                        Chip(
+                          avatar: const Icon(Icons.calendar_today, size: 16),
+                          label: Text(
+                            'Due: ${DateFormat('MMM dd, yyyy').format(currentTask.dueDate!)}',
+                          ),
+                        ),
+                    ],
+                  ),
+                  if (currentTask.extractedEntities != null &&
+                      currentTask.extractedEntities!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const Text(
+                      'Extracted Entities:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: currentTask.extractedEntities!.entries
+                          // Hide internal helper keys like detected_category and locations from UI
+                          .where(
+                            (entry) =>
+                                entry.key != 'detected_category' &&
+                                entry.key != 'locations',
+                          )
+                          .map((entry) {
+                            // Format backend data for display
+                            final displayValue = entry.value is List
+                                ? (entry.value as List)
+                                      .where((item) {
+                                        // Filter out relative date strings
+                                        if (entry.key == 'dates') {
+                                          final str = item
+                                              .toString()
+                                              .toLowerCase();
+                                          const relativeDates = [
+                                            'today',
+                                            'tomorrow',
+                                            'yesterday',
+                                            'next week',
+                                            'this week',
+                                          ];
+                                          if (relativeDates.contains(str)) {
+                                            return false;
+                                          }
+                                        }
+                                        return true;
+                                      })
+                                      .map((item) {
+                                        final str = item.toString();
+                                        // Remove time portion from dates
+                                        return entry.key == 'dates' &&
+                                                str.contains('T')
+                                            ? str.split('T')[0]
+                                            : str;
+                                      })
+                                      .join(', ')
+                                : entry.value.toString();
+
+                            return Chip(
+                              avatar: const Icon(Icons.label_outline, size: 16),
+                              label: Text('${entry.key}: $displayValue'),
+                              backgroundColor: Colors.blue.shade50,
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ],
+                  if (currentTask.suggestedActions != null &&
+                      currentTask.suggestedActions!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const Text(
+                      'Suggested Actions:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    ...currentTask.suggestedActions!.map(
+                      (action) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  _getHistoryIcon(entry.action),
-                                  size: 18,
-                                  color: _getHistoryColor(entry.action),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    _formatHistoryAction(entry),
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Text(
-                                  DateFormat(
-                                    'MMM dd, yyyy HH:mm',
-                                  ).format(entry.timestamp),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
+                            Icon(
+                              Icons.check_circle_outline,
+                              size: 20,
+                              color: Colors.green,
                             ),
-                            if (entry.field != null &&
-                                (entry.oldValue != null ||
-                                    entry.newValue != null)) ...[
-                              const SizedBox(height: 4),
-                              Padding(
-                                padding: const EdgeInsets.only(left: 26),
-                                child: Text(
-                                  _formatHistoryChange(entry),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[700],
-                                  ),
-                                ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                action,
+                                style: const TextStyle(fontSize: 14),
                               ),
-                            ],
+                            ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          widget.onEdit(currentTask);
-                        },
-                        icon: const Icon(Icons.edit_outlined, size: 20),
-                        label: const Text(
-                          'Edit Task',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
-                        ),
-                      ),
+                  ],
+                  if (currentTask.history != null &&
+                      currentTask.history!.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const Text(
+                      'Task History:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          final confirm = await showDialog<bool>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text('Delete Task'),
-                              content: const Text(
-                                'Are you sure you want to delete this task?',
+                    const SizedBox(height: 8),
+                    ...currentTask.history!.map(
+                      (entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _getHistoryIcon(entry.action),
+                                    size: 18,
+                                    color: _getHistoryColor(entry.action),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _formatHistoryAction(entry),
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat(
+                                      'MMM dd, yyyy HH:mm',
+                                    ).format(entry.timestamp),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.pop(context, false),
-                                  child: const Text('Cancel'),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: const Text('Delete'),
+                              if (entry.field != null &&
+                                  (entry.oldValue != null ||
+                                      entry.newValue != null)) ...[
+                                const SizedBox(height: 4),
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 26),
+                                  child: Text(
+                                    _formatHistoryChange(entry),
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                  ),
                                 ),
                               ],
-                            ),
-                          );
-
-                          if (confirm == true) {
-                            await provider.deleteTask(currentTask.id);
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Task deleted')),
-                              );
-                            }
-                          }
-                        },
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        label: const Text(
-                          'Delete',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
+                            ],
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 2,
                         ),
                       ),
                     ),
                   ],
-                ),
-                const SizedBox(height: 12),
-                if (currentTask.status != TaskStatus.completed)
-                  ElevatedButton.icon(
-                    onPressed: () async {
-                      final updatedTask = currentTask.copyWith(
-                        status: TaskStatus.completed,
-                      );
-                      await provider.updateTask(updatedTask);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Task marked as completed'),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            widget.onEdit(currentTask);
+                          },
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          label: const Text(
+                            'Edit Task',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.check_circle, size: 22),
-                    label: const Text(
-                      'Mark as Completed',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
                       ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            final confirm = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Delete Task'),
+                                content: const Text(
+                                  'Are you sure you want to delete this task?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm == true) {
+                              await provider.deleteTask(currentTask.id);
+                              if (context.mounted) {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Task deleted')),
+                                );
+                              }
+                            }
+                          },
+                          icon: const Icon(Icons.delete_outline, size: 20),
+                          label: const Text(
+                            'Delete',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            elevation: 2,
+                          ),
+                        ),
                       ),
-                      elevation: 3,
-                    ),
+                    ],
                   ),
-              ],
+                  const SizedBox(height: 12),
+                  if (currentTask.status != TaskStatus.completed)
+                    ElevatedButton.icon(
+                      onPressed: () async {
+                        final updatedTask = currentTask.copyWith(
+                          status: TaskStatus.completed,
+                        );
+                        await provider.updateTask(updatedTask);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Task marked as completed'),
+                            ),
+                          );
+                        }
+                      },
+                      icon: const Icon(Icons.check_circle, size: 22),
+                      label: const Text(
+                        'Mark as Completed',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 3,
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         );
