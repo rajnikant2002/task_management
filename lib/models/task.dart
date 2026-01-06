@@ -7,7 +7,7 @@ class TaskHistoryEntry {
   final String? oldValue;
   final String? newValue;
   final DateTime timestamp;
-  final String? userId;
+  final String? userId; // or "changed_by" from backend
 
   TaskHistoryEntry({
     required this.id,
@@ -25,13 +25,25 @@ class TaskHistoryEntry {
       action: json['action']?.toString() ?? '',
       field: json['field']?.toString(),
       oldValue: json['old_value']?.toString() ?? json['oldValue']?.toString(),
-      newValue: json['new_value']?.toString() ?? json['newValue']?.toString(),
+      // new_value can be a complex object – store a readable string for UI
+      newValue: json['new_value'] != null
+          ? json['new_value'].toString()
+          : json['newValue']?.toString(),
+      // Backend uses changed_at for history timestamp
       timestamp:
           DateTime.tryParse(
-            (json['timestamp'] ?? json['created_at'] ?? '').toString(),
+            (json['timestamp'] ??
+                    json['changed_at'] ??
+                    json['created_at'] ??
+                    '')
+                .toString(),
           ) ??
           DateTime.now(),
-      userId: json['user_id']?.toString() ?? json['userId']?.toString(),
+      // Map both user_id and changed_by into userId
+      userId:
+          json['user_id']?.toString() ??
+          json['userId']?.toString() ??
+          json['changed_by']?.toString(),
     );
   }
 }

@@ -37,7 +37,18 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _showTaskDetails(Task task, TaskProvider taskProvider) {
+  Future<void> _showTaskDetails(Task task, TaskProvider taskProvider) async {
+    // Always fetch latest task details (with history) before opening the modal
+    Task taskToShow = task;
+    try {
+      taskToShow = await taskProvider.fetchTaskById(task.id);
+    } catch (_) {
+      // If fetch fails, fall back to the task from the list
+      taskToShow = task;
+    }
+
+    if (!mounted) return;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -46,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       builder: (context) {
         return _TaskDetailsModal(
-          task: task,
+          task: taskToShow,
           onEdit: (task) {
             Navigator.of(context).pop();
             _showTaskForm(task: task);
@@ -262,57 +273,31 @@ class _TaskDetailsModal extends StatefulWidget {
 
 class _TaskDetailsModalState extends State<_TaskDetailsModal> {
   bool _hasUpdatedStatus = false;
-  Task? _fetchedTask;
-  bool _isLoadingTask = false;
 
   @override
   void initState() {
     super.initState();
-    // Fetch latest task details with history from API when modal opens
+    // Automatically update pending tasks to in progress when modal opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchTaskDetails();
-    });
-  }
-
-  Future<void> _fetchTaskDetails() async {
-    setState(() {
-      _isLoadingTask = true;
-    });
-
-    try {
-      final provider = context.read<TaskProvider>();
-      final task = await provider.fetchTaskById(widget.task.id);
-      setState(() {
-        _fetchedTask = task;
-        _isLoadingTask = false;
-      });
-      // After fetching, check if we need to update status
       _updatePendingToInProgress();
-    } catch (e) {
-      setState(() {
-        _isLoadingTask = false;
-      });
-      // If fetch fails, use the widget.task as fallback
-      _fetchedTask = widget.task;
-      // Still try to update status even if fetch failed
-      _updatePendingToInProgress();
-    }
+    });
   }
 
   Future<void> _updatePendingToInProgress() async {
     if (_hasUpdatedStatus) return;
 
     final provider = context.read<TaskProvider>();
-    final currentTask =
-        _fetchedTask ?? provider.getTaskById(widget.task.id) ?? widget.task;
+    final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
 
     // If task is pending, automatically update to in progress
     if (currentTask.status == TaskStatus.pending) {
       _hasUpdatedStatus = true;
       final updatedTask = currentTask.copyWith(status: TaskStatus.inProgress);
       await provider.updateTask(updatedTask);
-      // Fetch updated task after status change to get latest data
-      await _fetchTaskDetails();
+      // Force a rebuild after update completes
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -320,79 +305,85 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
-        // Use fetched task if available, otherwise fallback to provider or widget.task
-        final currentTask =
-            _fetchedTask ?? provider.getTaskById(widget.task.id) ?? widget.task;
+        // Get latest task from provider; fall back to task passed in
+        final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
 
-        if (_isLoadingTask) {
-          return const Padding(
-            padding: EdgeInsets.all(24.0),
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 24,
-            right: 24,
-            top: 24,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Title:',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey,
+        return SafeArea(
+          top: true,
+          bottom: false, // we handle bottom with viewInsets padding below
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 24,
+              right: 24,
+              top: 16 + MediaQuery.of(context).padding.top,
+              bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Title:',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              currentTask.title,
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 4),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(24),
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              child: const Icon(Icons.close, size: 24),
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            currentTask.title,
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Description:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.grey,
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Description:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currentTask.description,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Wrap(
+                      const SizedBox(height: 4),
+                      Text(
+                        currentTask.description,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: [
