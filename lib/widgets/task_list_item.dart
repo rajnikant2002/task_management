@@ -49,11 +49,18 @@ class TaskListItem extends StatelessWidget {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     DateFormat('MMM dd, yyyy').format(task.dueDate!),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
                 ],
               ),
@@ -61,11 +68,18 @@ class TaskListItem extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.person, size: 14, color: Colors.grey[600]),
+                Icon(
+                  Icons.person,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                ),
                 const SizedBox(width: 4),
                 Text(
                   task.assignedTo,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
                 ),
               ],
             ),

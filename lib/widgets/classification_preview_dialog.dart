@@ -169,7 +169,7 @@ class ClassificationPreviewDialog extends StatelessWidget {
 
                             return Chip(
                               label: Text('${entry.key}: $displayValue'),
-                              backgroundColor: Colors.blue.shade50,
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             );
                           })
                           .toList(),
@@ -274,9 +274,12 @@ class _BackendCategoryItem extends StatelessWidget {
         ),
         if (canOverride) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Override:',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<BackendCategory>(
@@ -351,9 +354,12 @@ class _ClassificationItem extends StatelessWidget {
         ),
         if (canOverride) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Override:',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
           ),
           const SizedBox(height: 4),
           DropdownButtonFormField<dynamic>(

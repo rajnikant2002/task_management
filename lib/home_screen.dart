@@ -331,12 +331,14 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
+                            Text(
                               'Title:',
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -367,12 +369,14 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Description:',
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -473,7 +477,9 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                             return Chip(
                               avatar: const Icon(Icons.label_outline, size: 16),
                               label: Text('${entry.key}: $displayValue'),
-                              backgroundColor: Colors.blue.shade50,
+                              backgroundColor: Theme.of(
+                                context,
+                              ).colorScheme.primaryContainer,
                             );
                           })
                           .toList(),
@@ -526,9 +532,15 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.grey.shade300),
+                            border: Border.all(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outline.withOpacity(0.2),
+                            ),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,7 +568,9 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                                     ).format(entry.timestamp),
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[600],
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.6),
                                     ),
                                   ),
                                 ],
@@ -571,7 +585,9 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                                     _formatHistoryChange(entry),
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[700],
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
                                     ),
                                   ),
                                 ),
