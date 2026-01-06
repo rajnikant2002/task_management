@@ -1,5 +1,41 @@
 import 'package:flutter/material.dart';
 
+class TaskHistoryEntry {
+  final String id;
+  final String action; // e.g., "created", "updated", "status_changed"
+  final String? field; // Field that was changed (e.g., "status", "title")
+  final String? oldValue;
+  final String? newValue;
+  final DateTime timestamp;
+  final String? userId;
+
+  TaskHistoryEntry({
+    required this.id,
+    required this.action,
+    this.field,
+    this.oldValue,
+    this.newValue,
+    required this.timestamp,
+    this.userId,
+  });
+
+  factory TaskHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return TaskHistoryEntry(
+      id: json['id']?.toString() ?? '',
+      action: json['action']?.toString() ?? '',
+      field: json['field']?.toString(),
+      oldValue: json['old_value']?.toString() ?? json['oldValue']?.toString(),
+      newValue: json['new_value']?.toString() ?? json['newValue']?.toString(),
+      timestamp:
+          DateTime.tryParse(
+            (json['timestamp'] ?? json['created_at'] ?? '').toString(),
+          ) ??
+          DateTime.now(),
+      userId: json['user_id']?.toString() ?? json['userId']?.toString(),
+    );
+  }
+}
+
 class Task {
   final String id;
   final String title;
@@ -8,13 +44,14 @@ class Task {
   final String assignedTo;
   final TaskStatus status;
   final TaskCategory? category; // Optional - use backendCategoryName instead
-  final TaskPriority priority;
+  final TaskPriority priority; // Priority from backend (low, medium, high)
   final DateTime createdAt;
   final DateTime updatedAt;
   final Map<String, dynamic>? extractedEntities;
   final List<String>? suggestedActions;
   final String?
   backendCategoryName; // Store original backend category name (scheduling, finance, etc.)
+  final List<TaskHistoryEntry>? history; // Task history/audit trail
 
   Task({
     required this.id,
@@ -30,6 +67,7 @@ class Task {
     this.extractedEntities,
     this.suggestedActions,
     this.backendCategoryName,
+    this.history,
   });
 
   Task copyWith({
@@ -46,6 +84,7 @@ class Task {
     Map<String, dynamic>? extractedEntities,
     List<String>? suggestedActions,
     String? backendCategoryName,
+    List<TaskHistoryEntry>? history,
   }) {
     return Task(
       id: id ?? this.id,
@@ -61,6 +100,7 @@ class Task {
       extractedEntities: extractedEntities ?? this.extractedEntities,
       suggestedActions: suggestedActions ?? this.suggestedActions,
       backendCategoryName: backendCategoryName ?? this.backendCategoryName,
+      history: history ?? this.history,
     );
   }
 
@@ -116,6 +156,16 @@ class Task {
             ? List<String>.from(
                 json['suggestedActions'] ?? json['suggested_actions'] ?? [],
               )
+            : null,
+        // Parse history if available
+        history: json['history'] != null
+            ? (json['history'] as List)
+                  .map(
+                    (entry) => TaskHistoryEntry.fromJson(
+                      entry as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList()
             : null,
       );
     } catch (e) {

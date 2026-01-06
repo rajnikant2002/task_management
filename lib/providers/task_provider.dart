@@ -53,6 +53,28 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
+  /// Fetch a single task from API by ID (includes history)
+  Future<Task> fetchTaskById(String id) async {
+    try {
+      final task = await _apiService.getTaskById(id);
+      // Update the task in local lists if it exists
+      final index = _tasks.indexWhere((t) => t.id == id);
+      if (index != -1) {
+        _tasks[index] = task;
+      }
+      final allIndex = _allTasksForCounts.indexWhere((t) => t.id == id);
+      if (allIndex != -1) {
+        _allTasksForCounts[allIndex] = task;
+      }
+      notifyListeners();
+      return task;
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
   int get pendingCount =>
       _allTasksForCounts.where((t) => t.status == TaskStatus.pending).length;
   int get inProgressCount =>

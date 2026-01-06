@@ -138,6 +138,63 @@ class ApiService {
     }
   }
 
+  /// Fetch a single task by ID with history
+  Future<Task> getTaskById(String id) async {
+    try {
+      // URL encode the ID to handle special characters
+      final encodedId = Uri.encodeComponent(id);
+      final response = await _dio.get('/tasks/$encodedId');
+
+      // Handle different response structures
+      Map<String, dynamic> data;
+      if (response.data is Map && response.data.containsKey('data')) {
+        data = response.data['data'] as Map<String, dynamic>;
+      } else if (response.data is Map) {
+        data = response.data as Map<String, dynamic>;
+      } else {
+        throw Exception('Invalid response format');
+      }
+
+      return Task.fromJson(data);
+    } catch (e) {
+      print('❌ Error fetching task by ID: $e');
+
+      if (e is DioException) {
+        if (e.response?.statusCode == 404) {
+          throw Exception('Task not found');
+        }
+        if (e.response?.statusCode == 503) {
+          final errorMessage =
+              e.response?.data?['message'] ??
+              'Service temporarily unavailable. Database connection issue.';
+          throw Exception(errorMessage);
+        }
+        if (e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.sendTimeout) {
+          throw Exception(
+            'Request timeout. The server is taking too long to respond.',
+          );
+        }
+        if (e.type == DioExceptionType.connectionError) {
+          throw Exception(
+            'Cannot connect to server. Please check your internet connection.',
+          );
+        }
+        if (e.response != null) {
+          final statusCode = e.response!.statusCode;
+          final errorMessage =
+              e.response?.data?['message'] ??
+              e.response?.data?['error'] ??
+              'Server error ($statusCode)';
+          throw Exception(errorMessage);
+        }
+      }
+
+      throw Exception('Failed to fetch task: ${e.toString()}');
+    }
+  }
+
   /// Create task with only raw user input (no classification)
   /// Backend will handle all classification logic
   Future<Task> createTaskRaw(Map<String, dynamic> rawData) async {

@@ -21,7 +21,13 @@ class FilterChips extends StatelessWidget {
                 onTap: () => taskProvider.setCategoryFilter(null),
               ),
               // Use backend categories (scheduling, finance, technical, safety, general)
-              ...['scheduling', 'finance', 'technical', 'safety', 'general'].map(
+              ...[
+                'scheduling',
+                'finance',
+                'technical',
+                'safety',
+                'general',
+              ].map(
                 (categoryName) => _FilterChip(
                   label: categoryName,
                   isSelected: taskProvider.selectedCategory == categoryName,

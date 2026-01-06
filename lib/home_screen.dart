@@ -262,31 +262,57 @@ class _TaskDetailsModal extends StatefulWidget {
 
 class _TaskDetailsModalState extends State<_TaskDetailsModal> {
   bool _hasUpdatedStatus = false;
+  Task? _fetchedTask;
+  bool _isLoadingTask = false;
 
   @override
   void initState() {
     super.initState();
-    // Automatically update pending tasks to in progress when modal opens
+    // Fetch latest task details with history from API when modal opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updatePendingToInProgress();
+      _fetchTaskDetails();
     });
+  }
+
+  Future<void> _fetchTaskDetails() async {
+    setState(() {
+      _isLoadingTask = true;
+    });
+
+    try {
+      final provider = context.read<TaskProvider>();
+      final task = await provider.fetchTaskById(widget.task.id);
+      setState(() {
+        _fetchedTask = task;
+        _isLoadingTask = false;
+      });
+      // After fetching, check if we need to update status
+      _updatePendingToInProgress();
+    } catch (e) {
+      setState(() {
+        _isLoadingTask = false;
+      });
+      // If fetch fails, use the widget.task as fallback
+      _fetchedTask = widget.task;
+      // Still try to update status even if fetch failed
+      _updatePendingToInProgress();
+    }
   }
 
   Future<void> _updatePendingToInProgress() async {
     if (_hasUpdatedStatus) return;
 
     final provider = context.read<TaskProvider>();
-    final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
+    final currentTask =
+        _fetchedTask ?? provider.getTaskById(widget.task.id) ?? widget.task;
 
     // If task is pending, automatically update to in progress
     if (currentTask.status == TaskStatus.pending) {
       _hasUpdatedStatus = true;
       final updatedTask = currentTask.copyWith(status: TaskStatus.inProgress);
       await provider.updateTask(updatedTask);
-      // Force a rebuild after update completes
-      if (mounted) {
-        setState(() {});
-      }
+      // Fetch updated task after status change to get latest data
+      await _fetchTaskDetails();
     }
   }
 
@@ -294,8 +320,16 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
       builder: (context, provider, _) {
-        // Get latest task from provider
-        final currentTask = provider.getTaskById(widget.task.id) ?? widget.task;
+        // Use fetched task if available, otherwise fallback to provider or widget.task
+        final currentTask =
+            _fetchedTask ?? provider.getTaskById(widget.task.id) ?? widget.task;
+
+        if (_isLoadingTask) {
+          return const Padding(
+            padding: EdgeInsets.all(24.0),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
         return Padding(
           padding: EdgeInsets.only(
@@ -486,6 +520,77 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
                     ),
                   ),
                 ],
+                if (currentTask.history != null &&
+                    currentTask.history!.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const Text(
+                    'Task History:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  ...currentTask.history!.map(
+                    (entry) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  _getHistoryIcon(entry.action),
+                                  size: 18,
+                                  color: _getHistoryColor(entry.action),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _formatHistoryAction(entry),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  DateFormat(
+                                    'MMM dd, yyyy HH:mm',
+                                  ).format(entry.timestamp),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (entry.field != null &&
+                                (entry.oldValue != null ||
+                                    entry.newValue != null)) ...[
+                              const SizedBox(height: 4),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 26),
+                                child: Text(
+                                  _formatHistoryChange(entry),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[700],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -609,5 +714,61 @@ class _TaskDetailsModalState extends State<_TaskDetailsModal> {
         );
       },
     );
+  }
+
+  IconData _getHistoryIcon(String action) {
+    switch (action.toLowerCase()) {
+      case 'created':
+        return Icons.add_circle_outline;
+      case 'updated':
+      case 'status_changed':
+        return Icons.edit_outlined;
+      case 'deleted':
+        return Icons.delete_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  Color _getHistoryColor(String action) {
+    switch (action.toLowerCase()) {
+      case 'created':
+        return Colors.green;
+      case 'updated':
+      case 'status_changed':
+        return Colors.blue;
+      case 'deleted':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatHistoryAction(TaskHistoryEntry entry) {
+    final action = entry.action.toLowerCase();
+    if (action == 'status_changed' || action == 'updated') {
+      if (entry.field != null) {
+        return '${entry.field!.replaceAll('_', ' ').split(' ').map((word) => word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1)).join(' ')} changed';
+      }
+      return 'Task updated';
+    }
+    return action
+        .split('_')
+        .map(
+          (word) =>
+              word.isEmpty ? '' : word[0].toUpperCase() + word.substring(1),
+        )
+        .join(' ');
+  }
+
+  String _formatHistoryChange(TaskHistoryEntry entry) {
+    if (entry.oldValue != null && entry.newValue != null) {
+      return '${entry.oldValue} → ${entry.newValue}';
+    } else if (entry.newValue != null) {
+      return 'Set to: ${entry.newValue}';
+    } else if (entry.oldValue != null) {
+      return 'Was: ${entry.oldValue}';
+    }
+    return '';
   }
 }
