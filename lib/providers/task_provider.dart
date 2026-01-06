@@ -19,7 +19,7 @@ class TaskProvider with ChangeNotifier {
   }
 
   List<Task> _tasks = [];
-  List<Task> _filteredTasks = [];
+  List<Task> _allTasksForCounts = []; // Keep all tasks for summary counts
   bool _isLoading = false;
   String? _error;
   String _searchQuery = '';
@@ -28,7 +28,7 @@ class TaskProvider with ChangeNotifier {
   TaskPriority? _selectedPriority;
   TaskStatus? _selectedStatus;
 
-  List<Task> get tasks => _filteredTasks;
+  List<Task> get tasks => _tasks; // Tasks are already filtered by backend
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isConnected => _connectivityService.isConnected;
@@ -41,18 +41,24 @@ class TaskProvider with ChangeNotifier {
   // Get a task by ID from the full task list (not filtered)
   Task? getTaskById(String id) {
     try {
+      // First check filtered tasks
       return _tasks.firstWhere((t) => t.id == id);
     } catch (e) {
-      return null;
+      // If not found in filtered list, check all tasks
+      try {
+        return _allTasksForCounts.firstWhere((t) => t.id == id);
+      } catch (e) {
+        return null;
+      }
     }
   }
 
   int get pendingCount =>
-      _tasks.where((t) => t.status == TaskStatus.pending).length;
+      _allTasksForCounts.where((t) => t.status == TaskStatus.pending).length;
   int get inProgressCount =>
-      _tasks.where((t) => t.status == TaskStatus.inProgress).length;
+      _allTasksForCounts.where((t) => t.status == TaskStatus.inProgress).length;
   int get completedCount =>
-      _tasks.where((t) => t.status == TaskStatus.completed).length;
+      _allTasksForCounts.where((t) => t.status == TaskStatus.completed).length;
 
   Future<void> _loadTasks() async {
     _isLoading = true;
@@ -60,8 +66,17 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _tasks = await _apiService.getTasks();
-      _applyFilters();
+      // Fetch filtered tasks from backend
+      _tasks = await _apiService.getTasks(
+        status: _selectedStatus,
+        category: _selectedCategory,
+        priority: _selectedPriority,
+        search: _searchQuery.isNotEmpty ? _searchQuery : null,
+      );
+      
+      // Also fetch all tasks for summary counts (without filters)
+      _allTasksForCounts = await _apiService.getTasks();
+      
       _error = null; // Clear error on success
     } catch (e) {
       // Extract clean error message
@@ -89,8 +104,8 @@ class TaskProvider with ChangeNotifier {
 
     try {
       final newTask = await _apiService.createTaskRaw(rawData);
-      _tasks.add(newTask);
-      _applyFilters();
+      // Reload tasks from backend to get filtered results
+      await _loadTasks();
       return newTask;
     } catch (e) {
       _error = e.toString();
@@ -108,12 +123,8 @@ class TaskProvider with ChangeNotifier {
   ) async {
     try {
       final updatedTask = await _apiService.updateTaskRaw(taskId, rawData);
-      // Update task in list
-      final index = _tasks.indexWhere((t) => t.id == taskId);
-      if (index != -1) {
-        _tasks[index] = updatedTask;
-      }
-      _applyFilters();
+      // Reload tasks from backend to get filtered results
+      await _loadTasks();
       return updatedTask;
     } catch (e) {
       _error = e.toString();
@@ -133,17 +144,14 @@ class TaskProvider with ChangeNotifier {
     _error = null;
 
     try {
-      final updatedTask = await _apiService.updateTaskOverride(
+      await _apiService.updateTaskOverride(
         taskId,
         categoryName: categoryName,
         priority: priority,
       );
-      final index = _tasks.indexWhere((t) => t.id == taskId);
-      if (index != -1) {
-        _tasks[index] = updatedTask;
-        _applyFilters();
-        notifyListeners(); // Notify after update
-      }
+      // Reload tasks from backend to get filtered results
+      await _loadTasks();
+      notifyListeners(); // Notify after update
     } catch (e) {
       _error = e.toString();
       notifyListeners(); // Notify even on error
@@ -157,12 +165,9 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final updatedTask = await _apiService.updateTask(task);
-      final index = _tasks.indexWhere((t) => t.id == task.id);
-      if (index != -1) {
-        _tasks[index] = updatedTask;
-        _applyFilters();
-      }
+      await _apiService.updateTask(task);
+      // Reload tasks from backend to get filtered results
+      await _loadTasks();
     } catch (e) {
       _error = e.toString();
       rethrow;
@@ -186,9 +191,8 @@ class TaskProvider with ChangeNotifier {
       // Try to delete from API first
       await _apiService.deleteTask(id);
 
-      // If successful, remove from local list (whether it exists locally or not)
-      _tasks.removeWhere((t) => t.id == id);
-      _applyFilters();
+      // Reload tasks from backend to get filtered results
+      await _loadTasks();
     } catch (e) {
       String errorMessage = e.toString();
       if (errorMessage.contains('Exception: ')) {
@@ -204,22 +208,22 @@ class TaskProvider with ChangeNotifier {
 
   void setSearchQuery(String query) {
     _searchQuery = query;
-    _applyFilters();
+    _loadTasks(); // Reload from backend with new search query
   }
 
   void setCategoryFilter(String? categoryName) {
     _selectedCategory = categoryName;
-    _applyFilters();
+    _loadTasks(); // Reload from backend with new category filter
   }
 
   void setPriorityFilter(TaskPriority? priority) {
     _selectedPriority = priority;
-    _applyFilters();
+    _loadTasks(); // Reload from backend with new priority filter
   }
 
   void setStatusFilter(TaskStatus? status) {
     _selectedStatus = status;
-    _applyFilters();
+    _loadTasks(); // Reload from backend with new status filter
   }
 
   void clearFilters() {
@@ -227,29 +231,6 @@ class TaskProvider with ChangeNotifier {
     _selectedCategory = null;
     _selectedPriority = null;
     _selectedStatus = null;
-    _applyFilters();
-  }
-
-  void _applyFilters() {
-    _filteredTasks = _tasks.where((task) {
-      final matchesSearch =
-          _searchQuery.isEmpty ||
-          task.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          task.description.toLowerCase().contains(_searchQuery.toLowerCase());
-
-      final matchesCategory =
-          _selectedCategory == null ||
-          task.backendCategoryName == _selectedCategory;
-      final matchesPriority =
-          _selectedPriority == null || task.priority == _selectedPriority;
-      final matchesStatus =
-          _selectedStatus == null || task.status == _selectedStatus;
-
-      return matchesSearch &&
-          matchesCategory &&
-          matchesPriority &&
-          matchesStatus;
-    }).toList();
-    notifyListeners();
+    _loadTasks(); // Reload from backend without filters
   }
 }

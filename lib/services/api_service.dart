@@ -43,9 +43,30 @@ class ApiService {
     );
   }
 
-  Future<List<Task>> getTasks() async {
+  Future<List<Task>> getTasks({
+    TaskStatus? status,
+    String? category,
+    TaskPriority? priority,
+    String? search,
+  }) async {
     try {
-      final response = await _dio.get('/tasks');
+      // Build query parameters for backend filtering
+      final queryParams = <String, dynamic>{};
+      if (status != null) {
+        // Convert status enum to backend format (e.g., "Pending", "In Progress", "Completed")
+        queryParams['status'] = status.value;
+      }
+      if (category != null && category.isNotEmpty) {
+        queryParams['category'] = category;
+      }
+      if (priority != null) {
+        queryParams['priority'] = priority.value;
+      }
+      if (search != null && search.isNotEmpty) {
+        queryParams['search'] = search;
+      }
+
+      final response = await _dio.get('/tasks', queryParameters: queryParams);
 
       // Handle different response structures
       List<dynamic> data;
