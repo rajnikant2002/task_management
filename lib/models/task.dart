@@ -84,22 +84,13 @@ class Task {
         ),
         // Category enum not needed - use backendCategoryName instead
         category: null,
-        // Preserve original backend category name
-        backendCategoryName: () {
-          final catStr = (json['category']?.toString() ?? '').toLowerCase();
-          const backendCategories = [
-            'scheduling',
-            'finance',
-            'technical',
-            'safety',
-            'general',
-          ];
-          return backendCategories.contains(catStr) ? catStr : null;
-        }(),
+        // Store backend category name directly (just fetch and store)
+        backendCategoryName: json['category']?.toString().toLowerCase(),
+        // Parse priority from backend (just convert string to enum for type safety)
         priority: TaskPriority.fromString(
           json['priority']?.toString() ??
               json['task_priority']?.toString() ??
-              'Medium',
+              'medium',
         ),
         createdAt:
             DateTime.tryParse(
