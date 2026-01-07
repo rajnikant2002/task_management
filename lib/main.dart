@@ -22,7 +22,9 @@ class MyApp extends StatelessWidget {
           // For emulator/simulator, use default (auto-detects platform):
           create: (_) => ApiService(),
         ),
+        //connectivity service Checks online/offline
         Provider<ConnectivityService>(create: (_) => ConnectivityService()),
+        //task provider depends on ApiService and ConnectivityService
         ChangeNotifierProxyProvider2<
           ApiService,
           ConnectivityService,

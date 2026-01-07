@@ -155,7 +155,6 @@ class TaskProvider with ChangeNotifier {
   }
 
   /// Update task with category/priority override
-  /// Note: Doesn't set loading state to avoid blank screen during dialog confirmation
   Future<void> updateTaskWithOverride(
     String taskId, {
     required String categoryName,

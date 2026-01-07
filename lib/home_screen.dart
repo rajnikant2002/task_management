@@ -73,14 +73,21 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Task Management'),
         actions: [
+          // Status Filter Icon
           IconButton(
-            icon: const Icon(Icons.filter_list),
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Filter by Status',
             onPressed: () {
-              // Show filter dialog
               showDialog(
                 context: context,
                 builder: (context) => AlertDialog(
-                  title: const Text('Filter by Status'),
+                  title: const Row(
+                    children: [
+                      Icon(Icons.info_outline, size: 24),
+                      SizedBox(width: 8),
+                      Text('Filter by Status'),
+                    ],
+                  ),
                   content: Consumer<TaskProvider>(
                     builder: (context, provider, _) {
                       return Column(
@@ -110,6 +117,80 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        context.read<TaskProvider>().setStatusFilter(null);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Clear'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          // Priority Filter Icon
+          IconButton(
+            icon: const Icon(Icons.flag_outlined),
+            tooltip: 'Filter by Priority',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Row(
+                    children: [
+                      Icon(Icons.flag_outlined, size: 24),
+                      SizedBox(width: 8),
+                      Text('Filter by Priority'),
+                    ],
+                  ),
+                  content: Consumer<TaskProvider>(
+                    builder: (context, provider, _) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          RadioListTile<TaskPriority?>(
+                            title: const Text('All'),
+                            value: null,
+                            groupValue: provider.selectedPriority,
+                            onChanged: (value) {
+                              provider.setPriorityFilter(value);
+                              Navigator.pop(context);
+                            },
+                          ),
+                          ...TaskPriority.values.map(
+                            (priority) => RadioListTile<TaskPriority?>(
+                              title: Text(priority.value),
+                              value: priority,
+                              groupValue: provider.selectedPriority,
+                              onChanged: (value) {
+                                provider.setPriorityFilter(value);
+                                Navigator.pop(context);
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        context.read<TaskProvider>().setPriorityFilter(null);
+                        Navigator.pop(context);
+                      },
+                      child: const Text('Clear'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Close'),
+                    ),
+                  ],
                 ),
               );
             },
