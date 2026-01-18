@@ -10,8 +10,8 @@ class ApiService {
     : baseUrl =
           baseUrl ??
           (Platform.isAndroid
-              ? 'http://192.168.0.171:3000/api'
-              : 'http://192.168.0.171:3000/api') {
+              ? 'https://smart-task-backend-4ut3.onrender.com/api/'
+              : 'https://smart-task-backend-4ut3.onrender.com/api/') {
     // Debug: Print the base URL being used
     print('🔗 API Base URL: $baseUrl');
     print('📱 Platform: ${Platform.operatingSystem}');
